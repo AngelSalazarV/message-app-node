@@ -1,8 +1,15 @@
+import ContainerMessage from "./components/ContainerMessage"
+import Sidebar from "./components/Sidebar"
 function App() {
 
   return (
     <>
-     <h1>Hola Mundo</h1>
+     <main>
+      <section className="flex">
+        <Sidebar />
+        <ContainerMessage />
+      </section>
+     </main>
     </>
   )
 }
