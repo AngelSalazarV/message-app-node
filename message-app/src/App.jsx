@@ -1,9 +1,11 @@
 import { useEffect } from "react"
-import ContainerMessage from "./components/ContainerMessage"
-import Sidebar from "./components/Sidebar"
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
 import socket from "./client"
-function App() {
+import {Login} from "./pages/Login.jsx"
+import {Home} from "./pages/Home.jsx"
 
+function App() {
+  
   useEffect(() => {
     socket.on('connect', () => {
       console.log('Connected to server')
@@ -15,15 +17,12 @@ function App() {
   }, [])
 
   return (
-    <>
-     <main>
-      <section className="flex">
-        <Sidebar />
-        <ContainerMessage />
-        
-      </section>
-     </main>
-    </>
+    <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Home />} />
+        </Routes>
+    </Router>
   )
 }
 
