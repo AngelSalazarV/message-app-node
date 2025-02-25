@@ -1,10 +1,11 @@
 import ContainerMessageText from './ContainerMessageText';
 import ContainerMessageHeader from './ContainerMessageHeader';
 
-function ContainerMessage() {
+
+function ContainerMessage({contact}) {
   return(
     <section className="flex flex-col w-full h-screen">
-      <ContainerMessageHeader />
+      <ContainerMessageHeader name={contact} />
       <ContainerMessageText />
     </section>
   )

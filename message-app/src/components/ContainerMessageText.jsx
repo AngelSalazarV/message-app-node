@@ -27,7 +27,7 @@ function ContainerMessageText() {
 
   return (
     <>
-      <div className="w-full h-full bg-gray-100 px-10 py-5 flex flex-col justify-end">
+      <div className="w-full h-full px-10 py-5 flex flex-col justify-end">
         {messages.length > 0 ? (
           messages.map((msg, index) => (
               <div 
@@ -46,7 +46,7 @@ function ContainerMessageText() {
               </div>
         )}
       </div>
-      <div className="px-10 bg-gray-200">
+      <div className="px-10 bg-gray-2 00">
         <input
         className="py-3 px-1 bg-white w-full my-3 rounded-md outline-none"
         type="text"
