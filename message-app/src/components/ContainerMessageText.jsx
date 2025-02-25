@@ -5,11 +5,12 @@ function ContainerMessageText() {
 
   const [messages, setMessages] = useState([])
   const [message, setMessage] = useState('')
+  const [userId] = useState(() => Math.random().toString(36).substr(2, 9))
 
   const sendMessage = () => {
     if(message.trim() !== ''){
-      socket.emit('sendMessage', message)
-      console.log(messages)
+      const newMessage = {userId, text: message}
+      socket.emit('sendMessage', newMessage)
       setMessage('')
     }
   }
@@ -26,27 +27,36 @@ function ContainerMessageText() {
 
   return (
     <>
-      <div className="w-full h-full bg-gray-100">
+      <div className="w-full h-full bg-gray-100 px-10 py-5 flex flex-col justify-end">
         {messages.length > 0 ? (
           messages.map((msg, index) => (
-              <div key={index} className="w-full h-1 flex items-center justify-start px-4">
-                <p>{msg}</p>
+              <div 
+              key={index} 
+              className={`w-full flex ${
+                msg.userId === userId
+                ? 'justify-end': 'justify-start'
+              }`}
+              >
+                <p className="bg-gray-300 mt-3 px-3 rounded-md shadow-sm">{msg.text}</p>
               </div>
             ))
           ): (
-              <div className="w-full h-1 flex items-center justify-start px-4">
-                <p>No messages</p>
+              <div className="w-full flex items-center justify-start px-4">
+                <p></p>
               </div>
         )}
       </div>
-      <input
-      type="text"
-      placeholder='Escriba un mensaje...'
-      value={message}
-      onChange={(e) => setMessage(e.target.value)}
-      >
-      </input>
-      <button onClick={sendMessage}>Enviar</button> 
+      <div className="px-10 bg-gray-200">
+        <input
+        className="py-3 px-1 bg-white w-full my-3 rounded-md outline-none"
+        type="text"
+        placeholder='Escriba un mensaje...'
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+        >
+        </input>
+      </div>
     </>
   );
 }
