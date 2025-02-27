@@ -5,12 +5,13 @@ function Sidebar({ onSelectedContact }) {
 
   const [search, setSearch] = useState("") 
   const [contacts, setContacts] = useState([])
+  const userId = localStorage.getItem('userId')
 
   const handleSearch = async (e) => {
     setSearch(e.target.value)
 
     if((e.target.value.length) > 2){
-      const res = await fetch(`http://localhost:3000/api/users?query=${e.target.value}`)
+      const res = await fetch(`http://localhost:3000/api/users?query=${e.target.value}&userId=${userId}`)
       const data = await res.json()
       setContacts(data)
     }else{
@@ -19,7 +20,7 @@ function Sidebar({ onSelectedContact }) {
   }
 
   return(
-    <div className="flex flex-col bg-gray-100 h-screen border-r border-gray-200">
+    <div className="w-2xl flex flex-col bg-gray-100 h-screen border-r border-gray-200">
       <div className="w-full bg-white px-3 py-2">
         <div className="flex flex-col gap-y-4">
           <h1 className="font-semibold text-2xl">Chats</h1>

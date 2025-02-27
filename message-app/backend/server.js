@@ -41,14 +41,15 @@ app.post('/api/login', async (req, res) => {
   return res.status(200).json({user: data.user, token: data.session.access_token})
 })
 
-//search users by email
+//search users by username
 app.get('/api/users', async (req, res) => {
-  const { query } = req.query
+  const { query, userId } = req.query
 
   const { data, error } = await supabase
     .from('users')
     .select('id, username, email')
     .ilike('username', `%${query}%`)
+    .neq('id', userId)
 
     if(error){
       return res.status(400).json({message: 'Error searching users', error: error.message})
