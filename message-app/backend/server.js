@@ -15,7 +15,7 @@ const app = express()
 const server = createServer(app)
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: '*',
     methods: ['GET', 'POST']
   }
 })
@@ -142,14 +142,14 @@ io.on('connection', (socket) => {
 })
 
 // Serve static files from the React app
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-app.use(express.static(path.join(__dirname, '../../message-app/build')))
+app.use(express.static(path.join(__dirname, '../build')));
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../message-app/build', 'index.html'))
-})
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
+});
 
 //Server listening
 server.listen(port, () => {
