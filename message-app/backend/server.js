@@ -41,27 +41,105 @@ app.post('/api/login', async (req, res) => {
   return res.status(200).json({user: data.user, token: data.session.access_token})
 })
 
+//search users by email
+app.get('/api/users', async (req, res) => {
+  const { query } = req.query
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, username, email')
+    .ilike('username', `%${query}%`)
+
+    if(error){
+      return res.status(400).json({message: 'Error searching users', error: error.message})
+    }
+    res.json(data)
+})
+
+
+//save messages in DB
+app.post('/api/messages', async (req, res) => {
+  const { sender_id, receiver_id, content } = req.body
+
+  const { data, error } = await supabase
+    .from('messages')
+    .insert([{sender_id, receiver_id, content}])
+    .select()
+
+    if(error){
+      return res.status(400).json({message: 'Error saving message', error: error.message})
+    }
+
+    res.json(data)
+})
+
+
+//get messages from 2 users
+app.get('/api/messages', async (req, res) => {
+  const { sender_id, receiver_id } = req.query;
+
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .or(`and(sender_id.eq.${sender_id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${sender_id})`)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    return res.status(400).json({ message: 'Error fetching messages', error: error.message });
+  }
+
+  res.json(data);
+})
+
+//conection to socket
+const users = {}
+
 io.on('connection', (socket) => {
-  console.log('User connected')
+  console.log('User connected', socket.id)
 
-  //Listen a message from client
-  socket.on('sendMessage', (message) => {
-    console.log('Message received:', message) 
-
-    io.emit('receivedMessage', message)
+  //user conected, save ID and socket ID
+  socket.on('userConnected', (userId) => {
+    users[userId] = socket.id
+    console.log(`User ${userId} registered with socket ID: ${socket.id}`) 
   })
 
+  //Send message to receptor user
+  socket.on('sendMessage', async (message) => {
+
+    //save message in supabase
+    const { data, error } = await supabase
+      .from('messages')
+      .insert([message])
+      .select()
+
+      if(error){
+        console.log('Error saving message:', error.message)
+        return
+      }
+
+      const savedMessage = data[0]
+      const receiverSocketId = users[savedMessage.receiver_id]
+
+      //send message to receptor user
+      if(receiverSocketId){
+        io.to(receiverSocketId).emit('receivedMessage', savedMessage)
+      }
+
+      //send message to sender user
+      io.to(socket.id).emit('receivedMessage', savedMessage)
+  })
 
   socket.on('disconnect', () => {
-    console.log('User disconected')
+    const disconnectedUser = Object.keys(users).find(key => users[key] === socket.id)
+    if(disconnectedUser){
+      delete users[disconnectedUser]
+    }
+    console.log(`User ${disconnectedUser} disconnected`)
   })
 })
 
 
-app.get('/', (req, res) => {
-  res.send('<h1>MessagApp</h1>')
-})
-
+//Server listening
 server.listen(port, () => {
   console.log(`Server running in http://localhost:${port}`)
 })

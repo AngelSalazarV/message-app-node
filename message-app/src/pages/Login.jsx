@@ -53,6 +53,7 @@ export function Login() {
     }
     console.log('User logged in:',result.user)
     localStorage.setItem('token', result.token)
+    localStorage.setItem('userId', result.user.id)
     navigate('/')
   }
 

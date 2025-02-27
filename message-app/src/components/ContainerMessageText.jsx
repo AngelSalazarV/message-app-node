@@ -1,15 +1,29 @@
 import { useState, useEffect } from "react";
 import socket from "../client";
 
-function ContainerMessageText() {
+function ContainerMessageText({ receivedId }) {
 
   const [messages, setMessages] = useState([])
   const [message, setMessage] = useState('')
-  const [userId] = useState(() => Math.random().toString(36).substr(2, 9))
+  const [userId, setUserId] = useState(null)
+
+  useEffect(() => {
+    const storedUserId = localStorage.getItem('userId')
+    setUserId(storedUserId)
+    socket.emit('userConnected', storedUserId)
+
+    //fetch initial messages
+    const fetchMessages = async () => {
+      const res = await fetch(`http://localhost:3000/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
+      const data = await res.json()
+      setMessages(data)
+    }
+    fetchMessages()
+  }, [receivedId])
 
   const sendMessage = () => {
     if(message.trim() !== ''){
-      const newMessage = {userId, text: message}
+      const newMessage = {sender_id: userId, receiver_id: receivedId, content: message}
       socket.emit('sendMessage', newMessage)
       setMessage('')
     }
@@ -33,11 +47,11 @@ function ContainerMessageText() {
               <div 
               key={index} 
               className={`w-full flex ${
-                msg.userId === userId
+                msg.sender_id === userId
                 ? 'justify-end': 'justify-start'
               }`}
               >
-                <p className="bg-gray-300 mt-3 px-3 rounded-md shadow-sm">{msg.text}</p>
+                <p className="bg-gray-300 mt-3 px-3 rounded-md shadow-sm">{msg.content}</p>
               </div>
             ))
           ): (
@@ -46,7 +60,7 @@ function ContainerMessageText() {
               </div>
         )}
       </div>
-      <div className="px-10 bg-gray-2 00">
+      <div className="px-10 bg-gray-200">
         <input
         className="py-3 px-1 bg-white w-full my-3 rounded-md outline-none"
         type="text"
