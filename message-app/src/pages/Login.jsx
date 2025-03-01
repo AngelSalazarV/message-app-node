@@ -43,7 +43,7 @@ export function Login() {
 
   //${import.meta.env.VITE_SERVER_URL} is the URL of the server instead of http://localhost:3000
   const login = async () => {
-    const res = await fetch(`http://localhost:3000/api/login`, {
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

@@ -16,7 +16,7 @@ function ContainerMessageText({ receivedId }) {
 
     //fetch initial messages
     const fetchMessages = async () => {
-      const res = await fetch(`http://localhost:3000/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
       const data = await res.json()
       setMessages(data)
     }
@@ -30,7 +30,7 @@ function ContainerMessageText({ receivedId }) {
       setMessage('')
 
       //Add contact to database
-      await fetch(`http://localhost:3000/api/contacts`, {
+      await fetch(`${import.meta.env.VITE_SERVER_URL}/api/contacts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
