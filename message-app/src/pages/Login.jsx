@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
+import { Toaster, toast } from 'sonner'
+
+
 const supabaseUrl = "https://kiinqpxnutbuauziwbbu.supabase.co"
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpaW5xcHhudXRidWF1eml3YmJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA0OTMxMTAsImV4cCI6MjA1NjA2OTExMH0.MdYSZzhTPRafSOUeZ_qxKpizVPT0rEU9f0c2vSJ5-zo"
 const supabase = createClient(supabaseUrl, supabaseKey)
+
 
 export function Login() {
   const [email, setEmail] = useState('')
@@ -19,25 +23,27 @@ export function Login() {
     })
   
     if(error) {
-      console.log("Error:", error.message)
+      toast.error(error.message)
       return
     }
 
     console.log("User created:", data)
+    toast.success('User created')
 
     const {error: dbError} = await supabase
       .from('users')
       .insert([{id: data.user.id, username, email, password_hash:password, created_at: new Date()}])
 
       if(dbError) {
-        console.log("Error:", dbError.message)
+        toast.error(dbError.message)
       }else{
         console.log("User added to database")
       }
   }
 
+  //${import.meta.env.VITE_SERVER_URL} is the URL of the server instead of http://localhost:3000
   const login = async () => {
-    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/login`, {
+    const res = await fetch(`http://localhost:3000/api/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -58,6 +64,8 @@ export function Login() {
   }
 
   return (
+    <>
+    <Toaster richColors/>
     <section className='flex flex-col items-center justify-center w-full h-screen'>
       <div className='flex flex-col items-center bg-gray-100 p-10 rounded-md shadow-md'>
         <h1 className='text-3xl font-bold'>Login</h1>
@@ -100,5 +108,6 @@ export function Login() {
         </form>
       </div>
     </section>
+    </>
   )
 }

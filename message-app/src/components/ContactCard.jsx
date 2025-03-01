@@ -1,8 +1,8 @@
-function ContactCard({ name }) {
+function ContactCard({ name, lastMessageTime }) {
   return (
     <div className="flex items-center w-full p-4 border-b border-gray-300">
       <p className="">{name}</p>
-      <p className="text-gray-500 ml-auto">1:30 PM</p>
+      <p className="text-gray-500 ml-auto">{lastMessageTime}</p>
     </div>
   )
 }

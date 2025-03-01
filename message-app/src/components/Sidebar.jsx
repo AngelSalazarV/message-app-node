@@ -1,23 +1,35 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ContactCard from "./ContactCard";
 
 function Sidebar({ onSelectedContact }) {
 
   const [search, setSearch] = useState("") 
   const [contacts, setContacts] = useState([])
+  const [recentContacts, setRecentContacts] = useState([])
   const userId = localStorage.getItem('userId')
+
+  useEffect(() => {
+    const fetchContacts = async () => {
+      const res = await fetch(`http://localhost:3000/api/contacts?user_id=${userId}`)
+      const data = await res.json()
+      setRecentContacts(data)
+    }
+    fetchContacts()
+  }, [userId])
 
   const handleSearch = async (e) => {
     setSearch(e.target.value)
 
     if((e.target.value.length) > 2){
-      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/users?query=${e.target.value}&userId=${userId}`)
+      const res = await fetch(`http://localhost:3000/api/users?query=${e.target.value}&userId=${userId}`)
       const data = await res.json()
       setContacts(data)
     }else{
       setContacts([])
     }
   }
+
+  const combinedContacts = search.length > 2 ? contacts : recentContacts
 
   return(
     <div className="w-2xl flex flex-col bg-gray-100 h-screen border-r border-gray-200">
@@ -33,10 +45,10 @@ function Sidebar({ onSelectedContact }) {
         </div>
       </div>
       <div>
-        {contacts.map((contact) => {
+        {combinedContacts.map((contact) => {
           return (
-            <div key={contact.id} onClick={() => onSelectedContact(contact)}>
-              <ContactCard name={contact.username} />
+            <div key={`${userId}- ${contact.contact_id}`} onClick={() => onSelectedContact(contact)}>
+              <ContactCard name={contact.username ? contact.username : contact.users.username} />
             </div>
           )  
         })}

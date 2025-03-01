@@ -1,1 +1,16 @@
-@import "tailwindcss"
+@import "tailwindcss";
+
+.bg-chat{
+  background-image: url('./assets/bg-chat.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, and Opera */
+}

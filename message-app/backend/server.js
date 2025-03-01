@@ -94,6 +94,43 @@ app.get('/api/messages', async (req, res) => {
   res.json(data);
 })
 
+//add contacts 
+app.post('/api/contacts', async (req, res) => {
+  const { user_id, contact_id } = req.body
+
+  
+
+  const { data, error } = await supabase
+    .from('contacts')
+    .insert([{user_id, contact_id}])
+    .select()
+
+    if(error) {
+      return res.status(400).json({message: 'Error adding contacts', error: error.message})
+    }
+
+    res.json(data)
+})
+
+//get contacts
+app.get('/api/contacts', async (req, res) => {
+  const { user_id } = req.query
+
+  const { data, error } = await supabase
+    .from('contacts')
+    .select(`
+      contact_id, 
+      users:contact_id (username)
+      `)
+    .eq('user_id', user_id)
+
+    if(error){
+      return res.status(400).json({message: 'Error fetching contacts', error: error.message})
+    }
+
+    res.json(data)
+})
+
 //conection to socket
 const users = {}
 
