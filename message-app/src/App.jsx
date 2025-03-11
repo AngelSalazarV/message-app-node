@@ -4,6 +4,7 @@ import socket from "./client"
 import {Login} from "./pages/Login.jsx"
 import {Home} from "./pages/Home.jsx"
 import PrivateRoute from "./components/PrivateRoute/PrivateRoute.jsx"
+import injectContext from "./context/AppContext.jsx"
 
 function App() {
   
@@ -27,4 +28,4 @@ function App() {
   )
 }
 
-export default App
+export default injectContext(App)

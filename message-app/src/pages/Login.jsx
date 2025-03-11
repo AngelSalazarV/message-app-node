@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useContext, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { useNavigate } from 'react-router-dom'
 import { Toaster, toast } from 'sonner'
+import { Context } from '../context/AppContext.jsx'
 
 
 const supabaseUrl = "https://kiinqpxnutbuauziwbbu.supabase.co"
@@ -10,11 +11,14 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 
 export function Login() {
+  const { actions } = useContext(Context)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
+
   const navigate = useNavigate()
 
+  //Sign up function
   const signUp = async () => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -41,26 +45,14 @@ export function Login() {
       }
   }
 
-  //${import.meta.env.VITE_SERVER_URL} is the URL of the server instead of http://localhost:3000
-  const login = async () => {
-    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({email, password})
-
-    })
-    const result = await res.json()
-
-    if(!res.ok){
-      console.log('Error: ', result.message)
-      return
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    try{
+      await actions.login({email, password})
+      navigate('/')
+    }catch(error){
+      toast.error(error.message)
     }
-    console.log('User logged in:',result.user)
-    localStorage.setItem('token', result.token)
-    localStorage.setItem('userId', result.user.id)
-    navigate('/')
   }
 
   return (
@@ -100,10 +92,7 @@ export function Login() {
           >Sign Up</button>
           <button 
             className='my-3 py-2 px-3 rounded-md bg-blue-500 text-white cursor-pointer'
-            onClick={(e) => {
-              e.preventDefault()
-              login()
-            }}
+            onClick={handleLogin}
           >Login</button>
         </form>
       </div>

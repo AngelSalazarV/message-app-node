@@ -61,20 +61,20 @@ app.get('/api/users', async (req, res) => {
 
 
 //save messages in DB
-app.post('/api/messages', async (req, res) => {
-  const { sender_id, receiver_id, content } = req.body
+// app.post('/api/messages', async (req, res) => {
+//   const { sender_id, receiver_id, content } = req.body
 
-  const { data, error } = await supabase
-    .from('messages')
-    .insert([{sender_id, receiver_id, content}])
-    .select()
+//   const { data, error } = await supabase
+//     .from('messages')
+//     .insert([{sender_id, receiver_id, content}])
+//     .select()
 
-    if(error){
-      return res.status(400).json({message: 'Error saving message', error: error.message})
-    }
+//     if(error){
+//       return res.status(400).json({message: 'Error saving message', error: error.message})
+//     }
 
-    res.json(data)
-})
+//     res.json(data)
+// })
 
 
 //get messages from 2 users

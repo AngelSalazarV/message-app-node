@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import socket from "../client";
 import moment from "moment-timezone";
+import { Context } from "../context/AppContext";
 
 function ContainerMessageText({ receivedId }) {
 
@@ -9,6 +10,8 @@ function ContainerMessageText({ receivedId }) {
   const [userId, setUserId] = useState(null)
   const messagesEndRef = useRef(null)
 
+  const { actions } = useContext(Context)
+
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId')
     setUserId(storedUserId)
@@ -16,7 +19,7 @@ function ContainerMessageText({ receivedId }) {
 
     //fetch initial messages
     const fetchMessages = async () => {
-      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
+      const res = await fetch(`http://localhost:3000/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
       const data = await res.json()
       setMessages(data)
     }
@@ -30,13 +33,7 @@ function ContainerMessageText({ receivedId }) {
       setMessage('')
 
       //Add contact to database
-      await fetch(`${import.meta.env.VITE_SERVER_URL}/api/contacts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({user_id: userId, contact_id: receivedId})
-      })
+      actions.addContact(userId, receivedId)
     }
   }
 

@@ -10,7 +10,7 @@ function Sidebar({ onSelectedContact }) {
 
   useEffect(() => {
     const fetchContacts = async () => {
-      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/contacts?user_id=${userId}`)
+      const res = await fetch(`http://localhost:3000/api/contacts?user_id=${userId}`)
       const data = await res.json()
       setRecentContacts(data)
     }
@@ -21,7 +21,7 @@ function Sidebar({ onSelectedContact }) {
     setSearch(e.target.value)
 
     if((e.target.value.length) > 2){
-      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/users?query=${e.target.value}&userId=${userId}`)
+      const res = await fetch(`http://localhost:3000/api/users?query=${e.target.value}&userId=${userId}`)
       const data = await res.json()
       setContacts(data)
     }else{
