@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useContext } from "react";
 import socket from "../client";
 import moment from "moment-timezone";
 import { Context } from "../context/AppContext";
+import AudioRecorder from "./AudioRecorder";
 
 function ContainerMessageText({ receivedId }) {
 
@@ -71,7 +72,11 @@ function ContainerMessageText({ receivedId }) {
                 >
                   <div className="flex bg-gray-300 mt-2 px-3 py-1 rounded-md shadow-sm gap-x-3">
                     <div>
-                      <p className="">{msg.content}</p>
+                      {msg.type === 'audio' ? (
+                        <audio controls src={msg.content} />
+                      ) : (
+                        <p className="">{msg.content}</p>
+                      )}
                     </div>
                     <div className="flex flex-col items-end justify-end">
                       <p className="text-xs text-gray-500">{formatTimestamp(msg.created_at)}</p>
@@ -88,7 +93,7 @@ function ContainerMessageText({ receivedId }) {
           </div>
         </div>
       </div>
-      <div className="px-10 bg-gray-200">
+      <div className="flex px-10 bg-gray-200">
         <input
           className="py-3 px-1 bg-white w-full my-3 rounded-md outline-none"
           type="text"
@@ -97,6 +102,7 @@ function ContainerMessageText({ receivedId }) {
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
         />
+        <AudioRecorder userId={userId} receivedId={receivedId} />
       </div>
     </>
   );

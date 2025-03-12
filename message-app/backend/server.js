@@ -6,12 +6,15 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import multer from 'multer'
+import { Readable } from 'stream'
 
 dotenv.config()
 
 const port = process.env.PORT || 3000
 
 const app = express()
+const upload = multer({ storage: multer.memoryStorage() })
 const server = createServer(app)
 const io = new Server(server, {
   cors: {
@@ -131,6 +134,60 @@ app.get('/api/contacts', async (req, res) => {
     res.json(data)
 })
 
+// Save audio messages
+app.post('/api/messages/audio', upload.single('audio'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No audio file received' });
+
+  const { sender_id, receiver_id } = req.body;
+  const audioBuffer = req.file.buffer;
+  const audioStream = Readable.from(audioBuffer);
+  const fileName = `${Date.now()}-${req.file.originalname}`;
+
+  const { data, error } = await supabase.storage
+    .from('audio-messages')
+    .upload(fileName, audioStream, {
+      contentType: req.file.mimetype,
+      duplex: 'half'
+    });
+
+  if (error) {
+    return res.status(500).json({ error_STORAGE: error.message });
+  }
+
+  const audioUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/audio-messages/${fileName}`;
+
+  const audioMessage = {
+    sender_id,
+    receiver_id,
+    content: audioUrl,
+    type: 'audio',
+  };
+
+  // Save audio message in the database
+  const { data: messageData, error: messageError } = await supabase
+    .from('messages')
+    .insert([audioMessage])
+    .select();
+
+  if (messageError) {
+    return res.status(500).json({ error_COLUMN: messageError.message });
+  }
+
+  // Emit the message to the receiver
+  const receiverSocketId = users[receiver_id];
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit('receivedMessage', messageData[0]);
+  }
+
+  // Emit the message to the sender
+  const senderSocketId = users[sender_id];
+  if (senderSocketId) {
+    io.to(senderSocketId).emit('receivedMessage', messageData[0]);
+  }
+
+  res.json(messageData[0]);
+})
+
 //conection to socket
 const users = {}
 
@@ -177,6 +234,8 @@ io.on('connection', (socket) => {
     console.log(`User ${disconnectedUser} disconnected`)
   })
 })
+
+
 
 // Serve static files from the React app
 const __filename = fileURLToPath(import.meta.url);
