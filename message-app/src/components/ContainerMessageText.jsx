@@ -3,12 +3,17 @@ import socket from "../client";
 import moment from "moment-timezone";
 import { Context } from "../context/AppContext";
 import AudioRecorder from "./AudioRecorder";
+import { ChevronDown } from 'lucide-react'
+import MessagesActionModal from "./MessagesActionModal";
 
 function ContainerMessageText({ receivedId }) {
 
   const [messages, setMessages] = useState([])
   const [message, setMessage] = useState('')
   const [userId, setUserId] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedMessage, setSelectedMessage] = useState(null)
+  const [modalPosition, setModalPosition] = useState(null)
   const messagesEndRef = useRef(null)
 
   const { actions } = useContext(Context)
@@ -57,6 +62,20 @@ function ContainerMessageText({ receivedId }) {
     return date.format('HH:mm')
   }
 
+  //OPEN MODAL
+  const handleOpenModal = (message, event) => {
+    const rect = event.target.getBoundingClientRect()
+    setModalPosition({ top: rect.top, left: rect.left, height: rect.height })
+    setSelectedMessage(message)
+    setIsModalOpen(true)
+  }
+
+  //CLOSE MODAL
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedMessage(null)
+  }
+
   return (
     <>
       <div className="w-full flex-1 px-50 bg-chat flex flex-col overflow-y-auto hide-scrollbar">
@@ -70,12 +89,18 @@ function ContainerMessageText({ receivedId }) {
                     msg.sender_id === userId ? 'justify-end' : 'justify-start'
                   }`}
                 >
-                  <div className="flex bg-gray-300 mt-2 px-3 py-1 rounded-md shadow-sm gap-x-3">
+                  <div className="relative flex bg-gray-300 mt-2 px-3 py-1 rounded-md shadow-sm gap-x-3 group">
+                  <span 
+                    className="absolute top-0 right-0 m-2 text-gray-500 hidden group-hover:block cursor-pointer bg-opacity-20 backdrop-blur-sm rounded-sm"
+                    onClick={(event) => handleOpenModal(msg, event)}
+                    >
+                      <ChevronDown/>
+                  </span>
                     <div>
                       {msg.type === 'audio' ? (
                         <audio controls src={msg.content} />
                       ) : (
-                        <p className="">{msg.content}</p>
+                        <p className="">{msg.content} </p>
                       )}
                     </div>
                     <div className="flex flex-col items-end justify-end">
@@ -104,6 +129,11 @@ function ContainerMessageText({ receivedId }) {
         />
         <AudioRecorder userId={userId} receivedId={receivedId} />
       </div>
+      <MessagesActionModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        position={modalPosition}
+      />
     </>
   );
 }
