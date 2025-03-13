@@ -127,7 +127,22 @@ app.post('/api/contacts', async (req, res) => {
       return res.status(400).json({message: 'Error adding contacts', error: error.message})
     }
 
-    res.json(data)
+    //get username from recented contact
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('username')
+      .eq('id', contact_id)
+      .single()
+
+      if(userError){
+        return res.status(400).json({ message: 'Error fetching user details', error: userError.message})
+      }
+
+      const contactWithUsername = { ...data[0], username: userData.username}
+
+      io.emit('newContact', { user_id, contact_id, contact: contactWithUsername})
+
+    res.json(contactWithUsername)
 })
 
 //get contacts

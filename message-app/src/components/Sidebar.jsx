@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import socket from "../client";
 import ContactCard from "./ContactCard";
 
 function Sidebar({ onSelectedContact }) {
@@ -15,6 +16,18 @@ function Sidebar({ onSelectedContact }) {
       setRecentContacts(data)
     }
     fetchContacts()
+  }, [userId])
+
+  useEffect(() => {
+    socket.on('newContact', ({ user_id, contact_id, contact }) => {
+      if (user_id === userId || contact_id === userId) {
+        setRecentContacts((prev) => [...prev, contact]);
+      }
+    });
+
+    return () => {
+      socket.off('newContact');
+    };
   }, [userId])
 
   const handleSearch = async (e) => {
