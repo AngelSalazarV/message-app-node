@@ -67,6 +67,15 @@ const getState = ({ getStore, getActions, setStore }) => {
         }catch(error){
           console.error('Error:', error)
         }
+      },
+      deleteMessages: async (messageId) => {
+        try{
+          await fetch(`http://localhost:3000/api/messages?id=${messageId}`, {
+            method: 'DELETE'
+          })
+        }catch(error){
+          console.error('Error:', error)
+        }
       }
     }
   }

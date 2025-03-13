@@ -48,8 +48,13 @@ function ContainerMessageText({ receivedId }) {
       setMessages((prev) => [...prev, newMessage])
     })
 
+    socket.on('messageDeleted', ({ id }) => {
+      setMessages((prev) => prev.filter((msg) => msg.id !== id))
+    })
+
     return () => {
       socket.off('receivedMessage')
+      socket.off('messageDeleted')
     }
   }, [])
 
@@ -76,6 +81,12 @@ function ContainerMessageText({ receivedId }) {
     setSelectedMessage(null)
   }
 
+  //DELETE MESSAGE
+  const deleteMessages = () => {
+    actions.deleteMessages(selectedMessage)
+  }
+  
+
   return (
     <>
       <div className="w-full flex-1 px-50 bg-chat flex flex-col overflow-y-auto hide-scrollbar">
@@ -92,7 +103,7 @@ function ContainerMessageText({ receivedId }) {
                   <div className="relative flex bg-gray-300 mt-2 px-3 py-1 rounded-md shadow-sm gap-x-3 group">
                   <span 
                     className="absolute top-0 right-0 m-2 text-gray-500 hidden group-hover:block cursor-pointer bg-opacity-20 backdrop-blur-sm rounded-sm"
-                    onClick={(event) => handleOpenModal(msg, event)}
+                    onClick={(event) => handleOpenModal(msg.id, event)}
                     >
                       <ChevronDown/>
                   </span>
@@ -132,6 +143,7 @@ function ContainerMessageText({ receivedId }) {
       <MessagesActionModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+        onDelete={deleteMessages}
         position={modalPosition}
       />
     </>

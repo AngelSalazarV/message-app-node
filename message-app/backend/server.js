@@ -97,11 +97,26 @@ app.get('/api/messages', async (req, res) => {
   res.json(data);
 })
 
+//delete messages
+app.delete('/api/messages', async (req, res) => {
+  const { id } = req.query
+
+  const { data, error } = await supabase
+    .from('messages')
+    .delete()
+    .eq('id', id)
+
+    if(error) {
+      return res.status(400).json({ message: 'Error delete message', error: error.message})
+    }
+
+    io.emit('messageDeleted', { id })
+    res.status(200).json({ message: 'Message deleted successfully', data})
+})
+
 //add contacts 
 app.post('/api/contacts', async (req, res) => {
   const { user_id, contact_id } = req.body
-
-  
 
   const { data, error } = await supabase
     .from('contacts')
