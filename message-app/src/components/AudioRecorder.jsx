@@ -45,7 +45,7 @@ function AudioRecorder({ userId, receivedId }) {
     console.log("Sender ID:", userId);
     console.log("Receiver ID:", receivedId);
 
-    const response = await fetch("http://localhost:3000/api/messages/audio", {
+    const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages/audio`, {
       method: "POST",
       body: formData,
       headers: {

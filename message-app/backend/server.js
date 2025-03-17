@@ -127,7 +127,7 @@ app.post('/api/contacts', async (req, res) => {
       return res.status(400).json({message: 'Error adding contacts', error: error.message})
     }
 
-    //get username from recented contact
+    //get username of the contact
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('username')
@@ -138,11 +138,37 @@ app.post('/api/contacts', async (req, res) => {
         return res.status(400).json({ message: 'Error fetching user details', error: userError.message})
       }
 
-      const contactWithUsername = { ...data[0], username: userData.username}
+      const contactWithUsernameForSender = { ...data[0], username: userData.username}
 
-      io.emit('newContact', { user_id, contact_id, contact: contactWithUsername})
+      //emit event for the sender
+      io.emit('newContact', { user_id, contact_id, contact: contactWithUsernameForSender})
 
-    res.json(contactWithUsername)
+      //add contact for the receiver
+      const {data: receiverData, error: receiverError } = await supabase
+        .from('contacts')
+        .insert([{ user_id: contact_id, contact_id: user_id}])
+        .select()
+
+      if(receiverError){
+        return res.status(400).json({ message: 'Error adding contact for receiver', error: receiverError.message})
+      }
+
+      const { data: senderUserData, error: senderUserError } = await supabase
+        .from('users')
+        .select('username')
+        .eq('id', user_id)
+        .single()
+      
+      if(senderUserError){
+        return res.status(400).json([{ message: 'Error fetching user details', error: senderUserError.message }])
+      }
+
+      const contactWithUsernameForReceiver = { ...receiverData[0], username: senderUserData.username}
+
+      //emit event for the receiver
+      io.to(users[contact_id]).emit('newContact', { user_id: contact_id, contact_id: user_id, contact: contactWithUsernameForReceiver})
+
+    res.json({ sender: contactWithUsernameForSender, receiver: contactWithUsernameForReceiver })
 })
 
 //get contacts

@@ -25,9 +25,13 @@ function ContainerMessageText({ receivedId }) {
 
     //fetch initial messages
     const fetchMessages = async () => {
-      const res = await fetch(`http://localhost:3000/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
-      const data = await res.json()
-      setMessages(data)
+      try{
+        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
+        const data = await res.json()
+        setMessages(data)
+      }catch(error){
+        console.error('Error fetching messages: ', error)
+      }
     }
     fetchMessages()
   }, [receivedId])
@@ -38,8 +42,22 @@ function ContainerMessageText({ receivedId }) {
       socket.emit('sendMessage', newMessage)
       setMessage('')
 
-      //Add contact to database
-      actions.addContact(userId, receivedId)
+
+      //Check if contact already exist
+      const checkContactExist = async () => {
+        try{
+          const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/contacts?user_id=${userId}`)
+          const data = await res.json()
+          const contactExist = data.some(contact => contact.contact_id === receivedId)
+          if(!contactExist){
+            //Add contact to database
+            actions.addContact(userId, receivedId)
+          }
+        }catch(error){
+          console.error('Error', error)
+        }
+      }
+      checkContactExist()
     }
   }
 
