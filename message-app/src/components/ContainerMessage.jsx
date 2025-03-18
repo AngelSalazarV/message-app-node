@@ -4,7 +4,7 @@ import ContainerMessageHeader from './ContainerMessageHeader';
 
 function ContainerMessage({ contact }) {
   const username = contact.username ? contact.username : contact.users.username
-  const contactToSend = contact.id ? contact.id : contact.contact_id 
+  const contactToSend =  contact.contact_id 
   return(
     <section className="flex flex-col w-full h-screen">
       <ContainerMessageHeader name={username} />

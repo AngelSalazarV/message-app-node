@@ -59,7 +59,13 @@ app.get('/api/users', async (req, res) => {
     if(error){
       return res.status(400).json({message: 'Error searching users', error: error.message})
     }
-    res.json(data)
+    const mappedData = data.map(user => ({
+      contact_id: user.id,
+      username: user.username,
+      email: user.email
+    }))
+  
+    res.json(mappedData)
 })
 
 
@@ -134,39 +140,48 @@ app.post('/api/contacts', async (req, res) => {
       .eq('id', contact_id)
       .single()
 
-      if(userError){
-        return res.status(400).json({ message: 'Error fetching user details', error: userError.message})
-      }
+    if(userError){
+      return res.status(400).json({ message: 'Error fetching user details', error: userError.message})
+    }
 
-      const contactWithUsernameForSender = { ...data[0], username: userData.username}
+    const contactWithUsernameForSender = { ...data[0], username: userData.username}
 
-      //emit event for the sender
-      io.emit('newContact', { user_id, contact_id, contact: contactWithUsernameForSender})
+    //emit event for the sender
+    const senderSocketId = users[user_id]
+    if (senderSocketId) {
+      io.to(senderSocketId).emit('newContact', { user_id, contact_id, contact: contactWithUsernameForSender })
+      console.log(senderSocketId)
+    }
+    
 
-      //add contact for the receiver
-      const {data: receiverData, error: receiverError } = await supabase
-        .from('contacts')
-        .insert([{ user_id: contact_id, contact_id: user_id}])
-        .select()
+    //add contact for the receiver
+    const {data: receiverData, error: receiverError } = await supabase
+      .from('contacts')
+      .insert([{ user_id: contact_id, contact_id: user_id}])
+      .select()
 
-      if(receiverError){
-        return res.status(400).json({ message: 'Error adding contact for receiver', error: receiverError.message})
-      }
+    if(receiverError){
+      return res.status(400).json({ message: 'Error adding contact for receiver', error: receiverError.message})
+    }
 
-      const { data: senderUserData, error: senderUserError } = await supabase
-        .from('users')
-        .select('username')
-        .eq('id', user_id)
-        .single()
-      
-      if(senderUserError){
-        return res.status(400).json([{ message: 'Error fetching user details', error: senderUserError.message }])
-      }
+    const { data: senderUserData, error: senderUserError } = await supabase
+      .from('users')
+      .select('username')
+      .eq('id', user_id)
+      .single()
+    
+    if(senderUserError){
+      return res.status(400).json([{ message: 'Error fetching user details', error: senderUserError.message }])
+    }
 
-      const contactWithUsernameForReceiver = { ...receiverData[0], username: senderUserData.username}
+    const contactWithUsernameForReceiver = { ...receiverData[0], username: senderUserData.username}
 
-      //emit event for the receiver
-      io.to(users[contact_id]).emit('newContact', { user_id: contact_id, contact_id: user_id, contact: contactWithUsernameForReceiver})
+    //emit event for the receiver
+    const receiverSocketId = users[contact_id]
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('newContact', { user_id: contact_id, contact_id: user_id, contact: contactWithUsernameForReceiver })
+      console.log(receiverSocketId)
+    }
 
     res.json({ sender: contactWithUsernameForSender, receiver: contactWithUsernameForReceiver })
 })
@@ -248,17 +263,16 @@ app.post('/api/messages/audio', upload.single('audio'), async (req, res) => {
 const users = {}
 
 io.on('connection', (socket) => {
-  console.log('User connected', socket.id)
 
   //user conected, save ID and socket ID
   socket.on('userConnected', (userId) => {
     users[userId] = socket.id
-    console.log(`User ${userId} registered with socket ID: ${socket.id}`) 
+    console.log('USERS:', users)
   })
 
   //Send message to receptor user
   socket.on('sendMessage', async (message) => {
-
+    console.log('USERS before sending message:', users)
     //save message in supabase
     const { data, error } = await supabase
       .from('messages')
@@ -287,7 +301,7 @@ io.on('connection', (socket) => {
     if(disconnectedUser){
       delete users[disconnectedUser]
     }
-    console.log(`User ${disconnectedUser} disconnected`)
+    console.log('USERS after disconnection:', users)
   })
 })
 

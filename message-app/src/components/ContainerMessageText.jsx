@@ -21,12 +21,11 @@ function ContainerMessageText({ receivedId }) {
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId')
     setUserId(storedUserId)
-    socket.emit('userConnected', storedUserId)
 
     //fetch initial messages
     const fetchMessages = async () => {
       try{
-        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
+        const res = await fetch(`http://localhost:3000/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
         const data = await res.json()
         setMessages(data)
       }catch(error){
@@ -46,7 +45,7 @@ function ContainerMessageText({ receivedId }) {
       //Check if contact already exist
       const checkContactExist = async () => {
         try{
-          const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/contacts?user_id=${userId}`)
+          const res = await fetch(`http://localhost:3000/api/contacts?user_id=${userId}`)
           const data = await res.json()
           const contactExist = data.some(contact => contact.contact_id === receivedId)
           if(!contactExist){
