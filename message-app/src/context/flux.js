@@ -1,6 +1,6 @@
 
 
-const getState = ({ getStore, getActions, setStore }) => {
+const getState = ({ getStore, setStore }) => {
   return {
     store: {
       userDataLogin: {},

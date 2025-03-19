@@ -41,7 +41,6 @@ function Sidebar({ onSelectedContact }) {
         });
       });
     });
-    console.log(contacts)
     return () => {
       socket.off('newLastMessage');
     };

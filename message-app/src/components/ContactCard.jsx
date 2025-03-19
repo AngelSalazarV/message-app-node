@@ -8,13 +8,15 @@ function ContactCard({ name, lastMessageTime, lastMessage }) {
     }
 
   return (
-    <div className="flex items-center justify-between w-full px-4 py-3 border-b border-gray-300">
+    <div className="flex items-center justify-between w-full px-4 h-18 border-b border-gray-300">
       <div>
         <p className="">{name}</p>
         <p className="text-gray-500 ml-auto">{lastMessage || ''}</p>
       </div>
       <div>
-        <p className="text-gray-500 ml-auto">{formatTimestamp(lastMessageTime) || ''}</p>
+        {lastMessageTime && 
+        <p className="text-gray-500 ml-auto">{formatTimestamp(lastMessageTime)}</p>
+        }
       </div>
     </div>
   )

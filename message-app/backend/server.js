@@ -144,7 +144,23 @@ app.post('/api/contacts', async (req, res) => {
       return res.status(400).json({ message: 'Error fetching user details', error: userError.message})
     }
 
-    const contactWithUsernameForSender = { ...data[0], username: userData.username}
+    // Obtener el último mensaje entre los usuarios
+      const { data: lastMessage, error: lastMessageError } = await supabase
+      .from('messages')
+      .select('content, created_at')
+      .or(`and(sender_id.eq.${contact_id},receiver_id.eq.${user_id}),and(sender_id.eq.${user_id},receiver_id.eq.${contact_id})`)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (lastMessageError) {
+      return res.status(400).json({ message: 'Error fetching last message', error: lastMessageError.message });
+    }
+
+    const contactWithUsernameForSender = { 
+      ...data[0], 
+      username: userData.username, 
+      last_message: lastMessage[0] || null 
+    }
 
     //emit event for the sender
     const senderSocketId = users[user_id]
