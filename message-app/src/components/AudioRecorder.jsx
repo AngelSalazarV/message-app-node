@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import socket from "../client";
+import { Mic, CirclePause, SendHorizonal, Trash } from "lucide-react";
 
 function AudioRecorder({ userId, receivedId }) {
   const [recording, setRecording] = useState(false);
@@ -42,10 +43,8 @@ function AudioRecorder({ userId, receivedId }) {
     formData.append("audio", audioBlob, "audio.webm");
     formData.append("sender_id", userId);
     formData.append("receiver_id", receivedId);
-    console.log("Sender ID:", userId);
-    console.log("Receiver ID:", receivedId);
 
-    const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages/audio`, {
+    const response = await fetch(`http://localhost:3000/api/messages/audio`, {
       method: "POST",
       body: formData,
       headers: {
@@ -66,15 +65,18 @@ function AudioRecorder({ userId, receivedId }) {
     <div className="flex items-center gap-2">
       <button
         onClick={recording ? stopRecording : startRecording}
-        className="bg-blue-500 text-white px-3 py-1 rounded"
+        className="p-2 cursor-pointer rounded-3xl hover:bg-gray-300"
       >
-        {recording ? "Detener" : "Grabar"}
+        {recording ? <CirclePause color="red"/> : <Mic color="#54656F"/>}
       </button>
       {audioBlob && (
         <>
           <audio controls src={URL.createObjectURL(audioBlob)}></audio>
-          <button onClick={sendAudio} className="bg-green-500 text-white px-3 py-1 rounded">
-            Enviar
+          <button  className="hover:bg-gray-300 p-2 rounded-3xl cursor-pointer">
+            <Trash color="gray" fill="gray"/>
+          </button>
+          <button onClick={sendAudio} className="bg-green-500 text-white p-2 rounded-3xl cursor-pointer hover:bg-green-400">
+            <SendHorizonal color="#fff"/>
           </button>
         </>
       )}

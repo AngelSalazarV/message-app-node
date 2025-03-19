@@ -190,7 +190,7 @@ app.post('/api/contacts', async (req, res) => {
 app.get('/api/contacts', async (req, res) => {
   const { user_id } = req.query
 
-  const { data, error } = await supabase
+  const { data: contacts, error: contactsError } = await supabase
     .from('contacts')
     .select(`
       contact_id, 
@@ -198,11 +198,27 @@ app.get('/api/contacts', async (req, res) => {
       `)
     .eq('user_id', user_id)
 
-    if(error){
-      return res.status(400).json({message: 'Error fetching contacts', error: error.message})
+    if(contactsError){
+      return res.status(400).json({message: 'Error fetching contacts', error: contacts.message})
     }
 
-    res.json(data)
+    // Obtener el último mensaje para cada contacto
+    const contactsWithLastMessage = await Promise.all(contacts.map(async (contact) => {
+      const { data: lastMessage, error: lastMessageError } = await supabase
+      .from('messages')
+      .select('content, created_at')
+      .or(`and(sender_id.eq.${contact.contact_id},receiver_id.eq.${user_id}),and(sender_id.eq.${user_id},receiver_id.eq.${contact.contact_id})`)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+      if (lastMessageError) {
+        return { ...contact, last_message: null };
+      }
+
+      return { ...contact, last_message: lastMessage[0] || null };
+    }))
+
+    res.json(contactsWithLastMessage)
 })
 
 // Save audio messages
@@ -294,6 +310,9 @@ io.on('connection', (socket) => {
 
       //send message to sender user
       io.to(socket.id).emit('receivedMessage', savedMessage)
+
+      //emit event to update last message in sidebar
+      io.emit('newLastMessage', { message: savedMessage })
   })
 
   socket.on('disconnect', () => {

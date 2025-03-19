@@ -25,7 +25,7 @@ function ContainerMessageText({ receivedId }) {
     //fetch initial messages
     const fetchMessages = async () => {
       try{
-        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
+        const res = await fetch(`http://localhost:3000/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
         const data = await res.json()
         setMessages(data)
       }catch(error){
@@ -41,22 +41,8 @@ function ContainerMessageText({ receivedId }) {
       socket.emit('sendMessage', newMessage)
       setMessage('')
 
-
-      //Check if contact already exist
-      const checkContactExist = async () => {
-        try{
-          const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/contacts?user_id=${userId}`)
-          const data = await res.json()
-          const contactExist = data.some(contact => contact.contact_id === receivedId)
-          if(!contactExist){
-            //Add contact to database
-            actions.addContact(userId, receivedId)
-          }
-        }catch(error){
-          console.error('Error', error)
-        }
-      }
-      checkContactExist()
+      //Add contact to database
+      actions.addContact(userId, receivedId)
     }
   }
 
@@ -126,7 +112,7 @@ function ContainerMessageText({ receivedId }) {
                   </span>
                     <div>
                       {msg.type === 'audio' ? (
-                        <audio controls src={msg.content} />
+                        <audio className="!bg-none" controls src={msg.content} />
                       ) : (
                         <p className="">{msg.content} </p>
                       )}
@@ -146,7 +132,7 @@ function ContainerMessageText({ receivedId }) {
           </div>
         </div>
       </div>
-      <div className="flex px-10 bg-gray-200">
+      <div className="w-full flex px-5 bg-gray-200 gap-x-2">
         <input
           className="py-3 px-1 bg-white w-full my-3 rounded-md outline-none"
           type="text"
