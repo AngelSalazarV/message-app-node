@@ -3,7 +3,7 @@ import socket from "../client";
 import moment from "moment-timezone";
 import { Context } from "../context/AppContext";
 import AudioRecorder from "./AudioRecorder";
-import { ChevronDown } from 'lucide-react'
+import { CheckCheck, ChevronDown } from 'lucide-react'
 import MessagesActionModal from "./MessagesActionModal";
 
 function ContainerMessageText({ receivedId }) {
@@ -48,7 +48,12 @@ function ContainerMessageText({ receivedId }) {
 
   useEffect(() => {
     socket.on('receivedMessage', (newMessage) => {
-      setMessages((prev) => [...prev, newMessage])
+      if (
+        (newMessage.sender_id === userId && newMessage.receiver_id === receivedId) ||
+        (newMessage.sender_id === receivedId && newMessage.receiver_id === userId)
+      ) {
+        setMessages((prev) => [...prev, newMessage]);
+      }
     })
 
     socket.on('messageDeleted', ({ id }) => {
@@ -59,11 +64,37 @@ function ContainerMessageText({ receivedId }) {
       socket.off('receivedMessage')
       socket.off('messageDeleted')
     }
+  }, [userId, receivedId])
+
+  useEffect(() => {
+    socket.on('messageSeen', (updatedMessage) => {
+      setMessages((prev) => prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg)));
+    });
+  
+    return () => {
+      socket.off('messageSeen');
+    };
   }, [])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+
+    //Update seen status of messages
+    const updateSeenStatus = async () => {
+      const unseenMessages = messages.filter((msg) => msg.receiver_id === userId && !msg.seen)
+      for(const msg of unseenMessages){
+        await fetch(`http://localhost:3000/api/messages/seen`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ messageId: msg.id })
+        })
+        socket.emit('messageSeen', { messageId: msg.id })
+      }
+    }
+    updateSeenStatus()
+  }, [messages, userId])
 
   const formatTimestamp = (timestamp) => {
     const date = moment.utc(timestamp).tz(moment.tz.guess())
@@ -89,7 +120,6 @@ function ContainerMessageText({ receivedId }) {
     actions.deleteMessages(selectedMessage)
   }
   
-
   return (
     <>
       <div className="w-full flex-1 px-50 bg-chat flex flex-col overflow-y-auto hide-scrollbar">
@@ -103,7 +133,7 @@ function ContainerMessageText({ receivedId }) {
                     msg.sender_id === userId ? 'justify-end' : 'justify-start'
                   }`}
                 >
-                  <div className="relative flex bg-gray-300 mt-2 px-3 py-1 rounded-md shadow-sm gap-x-3 group">
+                  <div className="relative flex bg-gray-300 mt-2 pl-3 pr-1.5 py-1 rounded-md shadow-sm gap-x-2 group">
                   <span 
                     className="absolute top-0 right-0 m-2 text-gray-500 hidden group-hover:block cursor-pointer bg-opacity-20 backdrop-blur-sm rounded-sm"
                     onClick={(event) => handleOpenModal(msg.id, event)}
@@ -117,8 +147,15 @@ function ContainerMessageText({ receivedId }) {
                         <p className="">{msg.content} </p>
                       )}
                     </div>
-                    <div className="flex flex-col items-end justify-end">
+                    <div className="flex flex-col justify-end">
                       <p className="text-xs text-gray-500">{formatTimestamp(msg.created_at)}</p>
+                    </div>
+                    <div className="flex items-end">
+                    {msg.sender_id === userId && msg.seen ? (
+                      <CheckCheck color="#53BDEB" size={18} />
+                    ) : msg.sender_id === userId ? (
+                      <CheckCheck color="gray" size={18} />
+                    ) : null}
                     </div>
                   </div>
                 </div>

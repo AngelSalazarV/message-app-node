@@ -62,7 +62,7 @@ function Sidebar({ onSelectedContact }) {
 
   //TODO: ARREGLAR ULTIMO MENSAJE DE CONTACTOS
   return(
-    <div className="w-2xl flex flex-col bg-gray-100 h-screen border-r border-gray-200">
+    <div className="w-100 flex flex-col bg-gray-100 h-screen border-r border-gray-200">
       <div className="w-full bg-white px-3 py-2">
         <div className="flex flex-col gap-y-4">
           <h1 className="font-semibold text-2xl">Chats</h1>
@@ -79,7 +79,10 @@ function Sidebar({ onSelectedContact }) {
           const lastMessageTime = contact?.last_message?.created_at;
           const lastMessage = contact?.last_message?.content;
           return (
-            <div key={`${userId}- ${contact.contact_id}`} onClick={() => onSelectedContact(contact)}>
+            <div 
+              key={`${userId}- ${contact.contact_id}`} 
+              onClick={() => onSelectedContact(contact)}
+             >
               <ContactCard 
                 name={contact.username ? contact.username : contact.users.username} 
                 lastMessageTime={lastMessageTime}

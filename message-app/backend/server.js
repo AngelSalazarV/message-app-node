@@ -30,7 +30,7 @@ app.use(cors())
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
 
 
-//login route
+//login 
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body
 
@@ -68,24 +68,6 @@ app.get('/api/users', async (req, res) => {
     res.json(mappedData)
 })
 
-
-//save messages in DB
-// app.post('/api/messages', async (req, res) => {
-//   const { sender_id, receiver_id, content } = req.body
-
-//   const { data, error } = await supabase
-//     .from('messages')
-//     .insert([{sender_id, receiver_id, content}])
-//     .select()
-
-//     if(error){
-//       return res.status(400).json({message: 'Error saving message', error: error.message})
-//     }
-
-//     res.json(data)
-// })
-
-
 //get messages from 2 users
 app.get('/api/messages', async (req, res) => {
   const { sender_id, receiver_id } = req.query;
@@ -118,6 +100,59 @@ app.delete('/api/messages', async (req, res) => {
 
     io.emit('messageDeleted', { id })
     res.status(200).json({ message: 'Message deleted successfully', data})
+})
+
+//update messages seen status
+app.post('/api/messages/seen', async (req, res) => {
+  const { messageId } = req.body
+
+  const  { data, error } = await supabase
+    .from('messages')
+    .update({ seen: true })
+    .eq('id', messageId)
+    .select()
+
+  if(error){
+    return res.status(400).json({ message: 'Error updating message status', error: error.message})
+  }
+
+  res.json(data)
+})
+
+
+//get contacts
+app.get('/api/contacts', async (req, res) => {
+  const { user_id } = req.query
+
+  const { data: contacts, error: contactsError } = await supabase
+    .from('contacts')
+    .select(`
+      contact_id, 
+      users:contact_id (username)
+      `)
+    .eq('user_id', user_id)
+
+    if(contactsError){
+      return res.status(400).json({message: 'Error fetching contacts', error: contacts.message})
+    }
+
+    // Obtener el último mensaje para cada contacto
+    const contactsWithLastMessage = await Promise.all(contacts.map(async (contact) => {
+      const { data: lastMessage, error: lastMessageError } = await supabase
+      .from('messages')
+      .select('content, created_at')
+      .or(`and(sender_id.eq.${contact.contact_id},receiver_id.eq.${user_id}),and(sender_id.eq.${user_id},receiver_id.eq.${contact.contact_id})`)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+      if (lastMessageError) {
+        return { ...contact, last_message: null };
+      }
+
+      return { ...contact, last_message: lastMessage[0] || null };
+    }))
+
+    res.json(contactsWithLastMessage)
 })
 
 //add contacts 
@@ -202,40 +237,7 @@ app.post('/api/contacts', async (req, res) => {
     res.json({ sender: contactWithUsernameForSender, receiver: contactWithUsernameForReceiver })
 })
 
-//get contacts
-app.get('/api/contacts', async (req, res) => {
-  const { user_id } = req.query
 
-  const { data: contacts, error: contactsError } = await supabase
-    .from('contacts')
-    .select(`
-      contact_id, 
-      users:contact_id (username)
-      `)
-    .eq('user_id', user_id)
-
-    if(contactsError){
-      return res.status(400).json({message: 'Error fetching contacts', error: contacts.message})
-    }
-
-    // Obtener el último mensaje para cada contacto
-    const contactsWithLastMessage = await Promise.all(contacts.map(async (contact) => {
-      const { data: lastMessage, error: lastMessageError } = await supabase
-      .from('messages')
-      .select('content, created_at')
-      .or(`and(sender_id.eq.${contact.contact_id},receiver_id.eq.${user_id}),and(sender_id.eq.${user_id},receiver_id.eq.${contact.contact_id})`)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-      if (lastMessageError) {
-        return { ...contact, last_message: null };
-      }
-
-      return { ...contact, last_message: lastMessage[0] || null };
-    }))
-
-    res.json(contactsWithLastMessage)
-})
 
 // Save audio messages
 app.post('/api/messages/audio', upload.single('audio'), async (req, res) => {
@@ -291,6 +293,8 @@ app.post('/api/messages/audio', upload.single('audio'), async (req, res) => {
   res.json(messageData[0]);
 })
 
+
+
 //conection to socket
 const users = {}
 
@@ -304,7 +308,7 @@ io.on('connection', (socket) => {
 
   //Send message to receptor user
   socket.on('sendMessage', async (message) => {
-    console.log('USERS before sending message:', users)
+    
     //save message in supabase
     const { data, error } = await supabase
       .from('messages')
@@ -329,6 +333,27 @@ io.on('connection', (socket) => {
 
       //emit event to update last message in sidebar
       io.emit('newLastMessage', { message: savedMessage })
+  })
+
+  //update message seen status
+  socket.on('messageSeen', async ({ messageId }) => {
+    const { data, error } = await supabase
+      .from('messages')
+      .update({ seen: true })
+      .eq('id', messageId)
+      .select()
+    
+    if(error){
+      console.log('Error updating message status:', error.message)
+      return
+    }
+
+    //emit the update message to the sender
+    const updatedMessage = data[0]
+    const senderSocketId = users[updatedMessage.sender_id]
+    if(senderSocketId){
+      io.to(senderSocketId).emit('messageSeen', updatedMessage)
+    }
   })
 
   socket.on('disconnect', () => {
