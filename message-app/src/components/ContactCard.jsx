@@ -1,6 +1,6 @@
 import moment from "moment-timezone";
 
-function ContactCard({ name, lastMessageTime, lastMessage }) {
+function ContactCard({ name, lastMessageTime, lastMessage, unreadCount }) {
 
   const formatTimestamp = (timestamp) => {
       const date = moment.utc(timestamp).tz(moment.tz.guess())
@@ -17,9 +17,11 @@ function ContactCard({ name, lastMessageTime, lastMessage }) {
         {lastMessageTime && 
         <>
         <p className="text-gray-500">{formatTimestamp(lastMessageTime)}</p>
-        <span className="w-5 text-white bg-green-500 rounded-3xl text-center font-semibold text-sm">
-          2
-        </span>
+        {unreadCount > 0 &&
+          <span className="w-5 text-white bg-green-500 rounded-3xl text-center font-semibold text-sm">
+            {unreadCount}
+          </span>
+        }
         </>
         }
       </div>

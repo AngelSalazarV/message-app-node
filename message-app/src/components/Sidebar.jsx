@@ -46,6 +46,52 @@ function Sidebar({ onSelectedContact }) {
     };
   }, [userId])
 
+  useEffect(() => {
+    socket.on('updateUnreadCount', ({ receiver_id, sender_id }) => {
+      if (receiver_id === userId) {
+        setRecentContacts((prevContacts) =>
+          prevContacts.map((contact) => {
+            if (contact.contact_id === sender_id) {
+              return {
+                ...contact,
+                unreadCount: (contact.unreadCount || 0) + 1, 
+                last_message: {
+                  ...contact.last_message,
+                  created_at: new Date().toISOString(), 
+                },
+              }
+            }
+            return contact;
+          })
+        )
+      }
+    })
+  
+    return () => {
+      socket.off('updateUnreadCount');
+    };
+  }, [userId])
+
+  useEffect(() => {
+    socket.on('messagesSeen', ({ sender_id, receiver_id }) => {
+      // Actualizar el estado de los contactos para borrar las notificaciones
+      if (receiver_id === userId) {
+        setRecentContacts((prevContacts) =>
+          prevContacts.map((contact) => {
+            if (contact.contact_id === sender_id) {
+              return { ...contact, unreadCount: 0 }; // Borrar las notificaciones
+            }
+            return contact;
+          })
+        );
+      }
+    });
+  
+    return () => {
+      socket.off('messagesSeen');
+    };
+  }, [userId])
+
   const handleSearch = async (e) => {
     setSearch(e.target.value)
 
@@ -87,6 +133,7 @@ function Sidebar({ onSelectedContact }) {
                 name={contact.username ? contact.username : contact.users.username} 
                 lastMessageTime={lastMessageTime}
                 lastMessage={lastMessage}
+                unreadCount={contact.unreadCount}
               />
             </div>
           )  

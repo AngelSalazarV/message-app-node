@@ -133,7 +133,9 @@ function ContainerMessageText({ receivedId }) {
                     msg.sender_id === userId ? 'justify-end' : 'justify-start'
                   }`}
                 >
-                  <div className="relative flex bg-gray-300 mt-2 pl-3 pr-1.5 py-1 rounded-md shadow-sm gap-x-2 group">
+                  <div className={`relative flex mt-2 pl-3 pr-1.5 py-1 rounded-md shadow-sm gap-x-2 group
+                    ${msg.sender_id === userId ? 'bg-green-100' : 'bg-gray-100'}
+                    `}>
                   <span 
                     className="absolute top-0 right-0 m-2 text-gray-500 hidden group-hover:block cursor-pointer bg-opacity-20 backdrop-blur-sm rounded-sm"
                     onClick={(event) => handleOpenModal(msg.id, event)}

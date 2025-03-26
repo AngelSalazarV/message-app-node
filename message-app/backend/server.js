@@ -152,7 +152,28 @@ app.get('/api/contacts', async (req, res) => {
       return { ...contact, last_message: lastMessage[0] || null };
     }))
 
-    res.json(contactsWithLastMessage)
+
+    // Obtener el conteo de mensajes no leídos para cada contacto
+    const contactsWithUnreadCount = await Promise.all(
+      contactsWithLastMessage.map(async (contact) => {
+        const { data: unreadMessages, error: unreadError } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('receiver_id', user_id)
+          .eq('sender_id', contact.contact_id)
+          .eq('seen', false);
+
+        if (unreadError) {
+          console.error('Error fetching unread messages:', unreadError.message);
+          return { ...contact, unreadCount: 0 };
+        }
+
+        return { ...contact, unreadCount: unreadMessages.length };
+      })
+    );
+
+    // Enviar la respuesta final con los datos combinados
+    res.json(contactsWithUnreadCount)
 })
 
 //add contacts 
@@ -333,6 +354,12 @@ io.on('connection', (socket) => {
 
       //emit event to update last message in sidebar
       io.emit('newLastMessage', { message: savedMessage })
+
+      //Emitir evento para actualizar conteo mensajes no leidos
+      io.emit('updateUnreadCount', {
+        receiver_id: savedMessage.receiver_id,
+        sender_id: savedMessage.sender_id
+      })
   })
 
   //update message seen status
@@ -348,11 +375,20 @@ io.on('connection', (socket) => {
       return
     }
 
-    //emit the update message to the sender
     const updatedMessage = data[0]
+
+    //emit the update message to the sender
     const senderSocketId = users[updatedMessage.sender_id]
     if(senderSocketId){
       io.to(senderSocketId).emit('messageSeen', updatedMessage)
+    }
+
+    const receiverSocketId = users[updatedMessage.receiver_id];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('messagesSeen', {
+        sender_id: updatedMessage.sender_id,
+        receiver_id: updatedMessage.receiver_id,
+      });
     }
   })
 
