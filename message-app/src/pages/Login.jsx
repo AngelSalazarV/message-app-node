@@ -76,6 +76,13 @@ export function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <input 
+            className='my-3 py-2 px-3 rounded-md outline-none border' 
+            type='text' 
+            placeholder='Username' 
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
           <button 
             className='my-3 py-2 px-3 rounded-md bg-blue-500 text-white cursor-pointer'
             onClick={(e) => {
