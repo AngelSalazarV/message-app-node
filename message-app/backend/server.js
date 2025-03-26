@@ -40,7 +40,7 @@ app.post('/api/login', async (req, res) => {
     password
   })
   if(error){
-    return res.status(401).json({message: 'Invalid credentials', error: error.message})
+    return res.status(401).json({message: 'Credenciales inválidas', error: error.message})
   }
 
   return res.status(200).json({user: data.user, token: data.session.access_token})
@@ -140,7 +140,7 @@ app.get('/api/contacts', async (req, res) => {
     const contactsWithLastMessage = await Promise.all(contacts.map(async (contact) => {
       const { data: lastMessage, error: lastMessageError } = await supabase
       .from('messages')
-      .select('content, created_at')
+      .select('content, created_at, type')
       .or(`and(sender_id.eq.${contact.contact_id},receiver_id.eq.${user_id}),and(sender_id.eq.${user_id},receiver_id.eq.${contact.contact_id})`)
       .order('created_at', { ascending: false })
       .limit(1);

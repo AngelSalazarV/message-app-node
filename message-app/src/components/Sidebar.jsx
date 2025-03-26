@@ -123,7 +123,7 @@ function Sidebar({ onSelectedContact }) {
       <div>
         {combinedContacts.map((contact) => {
           const lastMessageTime = contact?.last_message?.created_at;
-          const lastMessage = contact?.last_message?.content;
+          const lastMessage = contact?.last_message?.type === 'audio' ? 'Audio' : contact?.last_message?.content;
           return (
             <div 
               key={`${userId}- ${contact.contact_id}`} 

@@ -23,7 +23,7 @@ const getState = ({ getStore, setStore }) => {
           const result = await res.json()
   
           if(!res.ok){
-            throw new Error(result.message)
+            throw new Error(result.error)
           }
 
           setStore({ ...getStore(), userDataLogin: result})
@@ -31,8 +31,9 @@ const getState = ({ getStore, setStore }) => {
           localStorage.setItem('token', result.token)
           localStorage.setItem('userId', result.user.id)
           return result
-        }catch(error){
+        } catch(error){
           console.error('Error:', error)
+          throw error
         }
       },
       logout: () => {
