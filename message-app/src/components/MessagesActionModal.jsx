@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react"
 
-export function MessagesActionModal({ isOpen, onClose, onEdit, onDelete, position}) {
+export function MessagesActionModal({ isOpen, onClose, onDelete, position}) {
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
   const modalRef = useRef(null)
 
@@ -53,12 +53,6 @@ export function MessagesActionModal({ isOpen, onClose, onEdit, onDelete, positio
         onClick={onDelete}
         >
           Eliminar
-      </button>
-      <button 
-        className="text-left border-gray-400 px-4 py-2 hover:bg-gray-200"
-        onClick={onEdit}
-        >
-          Editar
       </button>
     </div>
   )

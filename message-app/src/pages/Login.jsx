@@ -15,6 +15,7 @@ export function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
+  const [isSignUp, setIsSignUp] = useState(false)
 
   const navigate = useNavigate()
 
@@ -58,43 +59,48 @@ export function Login() {
   return (
     <>
     <Toaster richColors/>
-    <section className='flex flex-col items-center justify-center w-full h-screen'>
-      <div className='flex flex-col items-center bg-gray-100 p-10 rounded-md shadow-md'>
-        <h1 className='text-3xl font-bold'>Login</h1>
-        <form className='flex flex-col'>
-          <input 
-            className='my-3 py-2 px-3 rounded-md outline-none border' 
-            type='text' 
-            placeholder='Email' 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input 
-            className='my-3 py-2 px-3 rounded-md outline-none border' 
-            type='password' 
-            placeholder='Password' 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <input 
-            className='my-3 py-2 px-3 rounded-md outline-none border' 
-            type='text' 
-            placeholder='Username' 
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <button 
-            className='my-3 py-2 px-3 rounded-md bg-blue-500 text-white cursor-pointer'
-            onClick={(e) => {
-              e.preventDefault()
-              signUp()
-            }}
-          >Sign Up</button>
-          <button 
-            className='my-3 py-2 px-3 rounded-md bg-blue-500 text-white cursor-pointer'
-            onClick={handleLogin}
-          >Login</button>
-        </form>
+    <section className='flex flex-col justify-center items-center w-full h-screen'>
+      <div className={`container ${isSignUp ? 'right-panel-active': ''}`} id="container">
+        <div className="form-container sign-up-container">
+          <form action="#">
+            <h1 className='mb-4 text-2xl'>Crear cuenta</h1>
+            <span>Usa tu correo para registrarte</span>
+            <input type="text" placeholder="Nombre" onChange={(e) => setUsername(e.target.value)}/>
+            <input type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)}/>
+            <input type="password" placeholder="Contraseña" onChange={(e) => setPassword(e.target.value)}/>
+            <button
+              className='mt-5'
+              onClick={(e) => {
+                e.preventDefault()
+                signUp()
+              }}
+            >Registrarme</button>
+          </form>
+        </div>
+        <div className="form-container sign-in-container">
+          <form action="#">
+            <h1 className='mb-4 text-2xl'>Iniciar sesión</h1>
+            <span>Usa tu cuenta para iniciar sesión</span>
+            <input type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)}/>
+            <input type="password" placeholder="Contraseña" onChange={(e) => setPassword(e.target.value)}/>
+            <a href="#">Olvidaste tu contraseña?</a>
+            <button onClick={handleLogin}>Iiniciar sesión</button>
+          </form>
+        </div>
+        <div className="overlay-container">
+          <div className="overlay">
+            <div className="overlay-panel overlay-left">
+              <h1>Bienvenido de nuevo!</h1>
+              <p>Inicie sesión para mantenerse conectado con nosotros</p>
+              <button className="ghost" id="signIn" onClick={() => setIsSignUp(false)}>Iniciar sesión</button>
+            </div>
+            <div className={`overlay-panel overlay-right `}>
+              <h1>Bienvendo!</h1>
+              <p>Introduce tus datos personales y comienza a chatear</p>
+              <button className="ghost" id="signUp" onClick={() => setIsSignUp(true)}>Registrarme</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
     </>
