@@ -65,11 +65,11 @@ export function Login() {
           <form action="#">
             <h1 className='mb-4 text-2xl'>Crear cuenta</h1>
             <span>Usa tu correo para registrarte</span>
-            <input type="text" placeholder="Nombre" onChange={(e) => setUsername(e.target.value)}/>
-            <input type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)}/>
-            <input type="password" placeholder="Contraseña" onChange={(e) => setPassword(e.target.value)}/>
+            <input className='input-login' type="text" placeholder="Nombre" onChange={(e) => setUsername(e.target.value)}/>
+            <input className='input-login' type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)}/>
+            <input className='input-login' type="password" placeholder="Contraseña" onChange={(e) => setPassword(e.target.value)}/>
             <button
-              className='mt-5'
+              className='mt-5 button-login'
               onClick={(e) => {
                 e.preventDefault()
                 signUp()
@@ -81,23 +81,23 @@ export function Login() {
           <form action="#">
             <h1 className='mb-4 text-2xl'>Iniciar sesión</h1>
             <span>Usa tu cuenta para iniciar sesión</span>
-            <input type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)}/>
-            <input type="password" placeholder="Contraseña" onChange={(e) => setPassword(e.target.value)}/>
+            <input className='input-login' type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)}/>
+            <input className='input-login' type="password" placeholder="Contraseña" onChange={(e) => setPassword(e.target.value)}/>
             <a href="#">Olvidaste tu contraseña?</a>
-            <button onClick={handleLogin}>Iiniciar sesión</button>
+            <button className='button-login' onClick={handleLogin}>Iiniciar sesión</button>
           </form>
         </div>
         <div className="overlay-container">
           <div className="overlay">
             <div className="overlay-panel overlay-left">
               <h1>Bienvenido de nuevo!</h1>
-              <p>Inicie sesión para mantenerse conectado con nosotros</p>
-              <button className="ghost" id="signIn" onClick={() => setIsSignUp(false)}>Iniciar sesión</button>
+              <p className='font-thin leading-5 tracking-wide my-5'>Inicie sesión para mantenerse conectado con nosotros</p>
+              <button className="ghost button-login" id="signIn" onClick={() => setIsSignUp(false)}>Iniciar sesión</button>
             </div>
             <div className={`overlay-panel overlay-right `}>
               <h1>Bienvendo!</h1>
-              <p>Introduce tus datos personales y comienza a chatear</p>
-              <button className="ghost" id="signUp" onClick={() => setIsSignUp(true)}>Registrarme</button>
+              <p className='font-thin leading-5 tracking-wide my-5'>Introduce tus datos personales y comienza a chatear</p>
+              <button className="ghost button-login" id="signUp" onClick={() => setIsSignUp(true)}>Registrarme</button>
             </div>
           </div>
         </div>

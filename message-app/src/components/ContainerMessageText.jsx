@@ -133,7 +133,7 @@ function ContainerMessageText({ receivedId }) {
                     msg.sender_id === userId ? 'justify-end' : 'justify-start'
                   }`}
                 >
-                  <div className={`relative flex mt-2 pl-3 pr-1.5 py-1 rounded-md shadow-sm gap-x-2 group
+                  <div className={`relative max-w-3xl flex mt-2 pl-3 pr-1.5 py-1 rounded-md shadow-sm gap-x-2 group
                     ${msg.sender_id === userId ? 'bg-green-100' : 'bg-gray-100'}
                     `}>
                   <span 

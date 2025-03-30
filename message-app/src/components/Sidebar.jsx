@@ -33,14 +33,22 @@ function Sidebar({ onSelectedContact }) {
   useEffect(() => {
     socket.on('newLastMessage', ({ message }) => {
       setRecentContacts((prev) => {
-        return prev.map((contact) => {
+        const updatedContacts = prev.map((contact) => {
           if (contact.contact_id === message.sender_id || contact.contact_id === message.receiver_id) {
             return { ...contact, last_message: message };
           }
           return contact;
         });
+  
+        // Ordenar los contactos por la fecha del último mensaje
+        return updatedContacts.sort((a, b) => {
+          const dateA = new Date(a.last_message?.created_at || 0);
+          const dateB = new Date(b.last_message?.created_at || 0);
+          return dateB - dateA; // Orden descendente
+        });
       });
     });
+  
     return () => {
       socket.off('newLastMessage');
     };
@@ -121,12 +129,15 @@ function Sidebar({ onSelectedContact }) {
         </div>
       </div>
       <div>
-        {combinedContacts.map((contact) => {
+        {combinedContacts.map((contact, index) => {
           const lastMessageTime = contact?.last_message?.created_at;
           const lastMessage = contact?.last_message?.type === 'audio' ? 'Audio' : contact?.last_message?.content;
           return (
             <div 
-              key={`${userId}- ${contact.contact_id}`} 
+              key={`${userId}- ${contact.contact_id}`}
+              className={`contact-card ${
+                index === 0 ? "contact-card-enter-active" : ""
+              }`} 
               onClick={() => onSelectedContact(contact)}
              >
               <ContactCard 
