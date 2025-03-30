@@ -25,7 +25,7 @@ function ContainerMessageText({ receivedId }) {
     //fetch initial messages
     const fetchMessages = async () => {
       try{
-        const res = await fetch(`http://localhost:3000/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
+        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
         const data = await res.json()
         setMessages(data)
       }catch(error){
@@ -83,7 +83,7 @@ function ContainerMessageText({ receivedId }) {
     const updateSeenStatus = async () => {
       const unseenMessages = messages.filter((msg) => msg.receiver_id === userId && !msg.seen)
       for(const msg of unseenMessages){
-        await fetch(`http://localhost:3000/api/messages/seen`, {
+        await fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages/seen`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

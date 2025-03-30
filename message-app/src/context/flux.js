@@ -12,7 +12,7 @@ const getState = ({ getStore, setStore }) => {
       //${import.meta.env.VITE_SERVER_URL} is the URL of the server instead of http://localhost:3000
       login : async (loginUserData) => {
         try{
-          const res = await fetch(`http://localhost:3000/api/login`, {
+          const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/login`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -49,7 +49,7 @@ const getState = ({ getStore, setStore }) => {
       },
       fetchMessages: async (senderId, receiverId) => {
         try{
-          const res = await fetch(`http://localhost:3000/api/messages?sender_id=${senderId}&receiver_id=${receiverId}`)
+          const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages?sender_id=${senderId}&receiver_id=${receiverId}`)
           const data = await res.json()
           setStore({ ...getStore(), messages: data})
         }catch(error){
@@ -58,7 +58,7 @@ const getState = ({ getStore, setStore }) => {
       },
       addContact: async (userId, contactId) => {
         try{
-          await fetch(`http://localhost:3000/api/contacts`, {
+          await fetch(`${import.meta.env.VITE_SERVER_URL}/api/contacts`, {
             method: 'POST', 
             headers: {
               'Content-Type': 'application/json'
@@ -71,7 +71,7 @@ const getState = ({ getStore, setStore }) => {
       },
       deleteMessages: async (messageId) => {
         try{
-          await fetch(`http://localhost:3000/api/messages?id=${messageId}`, {
+          await fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages?id=${messageId}`, {
             method: 'DELETE'
           })
         }catch(error){
