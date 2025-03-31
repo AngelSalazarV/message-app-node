@@ -3,17 +3,19 @@ import {Login} from "./pages/Login.jsx"
 import {Home} from "./pages/Home.jsx"
 import PrivateRoute from "./components/PrivateRoute/PrivateRoute.jsx"
 import injectContext from "./context/AppContext.jsx"
+import { GlobalProvider } from "./context/GlobalContext.jsx"
 
 function App() {
-
   return (
-    <Router>
+    <GlobalProvider> {/* Envuelve toda la aplicación con el GlobalProvider */}
+      <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
         </Routes>
-    </Router>
-  )
+      </Router>
+    </GlobalProvider>
+  );
 }
 
 export default injectContext(App)

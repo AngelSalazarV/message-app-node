@@ -1,149 +1,133 @@
 import { useState, useEffect, useRef, useContext } from "react";
+import { GlobalContext } from "../context/GlobalContext";
 import socket from "../client";
 import moment from "moment-timezone";
-import { Context } from "../context/AppContext";
+import { CheckCheck, ChevronDown } from "lucide-react";
 import AudioRecorder from "./AudioRecorder";
-import { CheckCheck, ChevronDown } from 'lucide-react'
 import MessagesActionModal from "./MessagesActionModal";
 
 function ContainerMessageText({ receivedId }) {
-
-  const [messages, setMessages] = useState([])
-  const [message, setMessage] = useState('')
-  const [userId, setUserId] = useState(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedMessage, setSelectedMessage] = useState(null)
-  const [modalPosition, setModalPosition] = useState(null)
-  const messagesEndRef = useRef(null)
-
-  const { actions } = useContext(Context)
+  const { messages, loadMessages, addMessages } = useContext(GlobalContext);
+  const [message, setMessage] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [modalPosition, setModalPosition] = useState(null);
+  const messagesEndRef = useRef(null);
+  const chatId = `${receivedId}-${localStorage.getItem("userId")}`;
+  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem('userId')
-    setUserId(storedUserId)
+    loadMessages(chatId, userId, receivedId);
 
-    //fetch initial messages
-    const fetchMessages = async () => {
-      try{
-        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages?sender_id=${storedUserId}&receiver_id=${receivedId}`)
-        const data = await res.json()
-        setMessages(data)
-      }catch(error){
-        console.error('Error fetching messages: ', error)
-      }
+    return () => {
+      setMessage("");
+    };
+  }, [receivedId]);
+
+  const sendMessage = () => {
+    if (message.trim() !== "") {
+      const newMessage = {
+        sender_id: userId,
+        receiver_id: receivedId,
+        content: message,
+      };
+      socket.emit("sendMessage", newMessage);
+      addMessages(chatId, [newMessage]);
+      setMessage("");
     }
-    fetchMessages()
-  }, [receivedId])
-
-  const sendMessage = async ()  => {
-    if(message.trim() !== ''){
-      const newMessage = {sender_id: userId, receiver_id: receivedId, content: message}
-      socket.emit('sendMessage', newMessage)
-      setMessage('')
-
-      //Add contact to database
-      actions.addContact(userId, receivedId)
-    }
-  }
+  };
 
   useEffect(() => {
-    socket.on('receivedMessage', (newMessage) => {
+    socket.on("receivedMessage", (newMessage) => {
       if (
         (newMessage.sender_id === userId && newMessage.receiver_id === receivedId) ||
         (newMessage.sender_id === receivedId && newMessage.receiver_id === userId)
       ) {
-        setMessages((prev) => [...prev, newMessage]);
+        addMessages(chatId, [newMessage]);
       }
-    })
-
-    socket.on('messageDeleted', ({ id }) => {
-      setMessages((prev) => prev.filter((msg) => msg.id !== id))
-    })
-
-    return () => {
-      socket.off('receivedMessage')
-      socket.off('messageDeleted')
-    }
-  }, [userId, receivedId])
-
-  useEffect(() => {
-    socket.on('messageSeen', (updatedMessage) => {
-      setMessages((prev) => prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg)));
     });
-  
+
+    socket.on("messageDeleted", ({ id }) => {
+      addMessages(chatId, messages[chatId]?.filter((msg) => msg.id !== id));
+    });
+
     return () => {
-      socket.off('messageSeen');
+      socket.off("receivedMessage");
+      socket.off("messageDeleted");
     };
-  }, [])
+  }, [userId, receivedId, chatId, messages, addMessages]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
-    //Update seen status of messages
+    // Actualizar el estado de los mensajes vistos
     const updateSeenStatus = async () => {
-      const unseenMessages = messages.filter((msg) => msg.receiver_id === userId && !msg.seen)
-      for(const msg of unseenMessages){
-        await fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages/seen`, {
-          method: 'POST',
+      const unseenMessages = messages[chatId]?.filter((msg) => msg.receiver_id === userId && !msg.seen);
+      for (const msg of unseenMessages) {
+        await fetch(`http://localhost:3000/api/messages/seen`, {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({ messageId: msg.id })
-        })
-        socket.emit('messageSeen', { messageId: msg.id })
+          body: JSON.stringify({ messageId: msg.id }),
+        });
+        socket.emit("messageSeen", { messageId: msg.id });
       }
-    }
-    updateSeenStatus()
-  }, [messages, userId])
+    };
+    updateSeenStatus();
+  }, [messages, chatId, userId]);
 
   const formatTimestamp = (timestamp) => {
-    const date = moment.utc(timestamp).tz(moment.tz.guess())
-    return date.format('HH:mm')
-  }
+    const date = moment.utc(timestamp).tz(moment.tz.guess());
+    return date.format("HH:mm");
+  };
 
-  //OPEN MODAL
+  // Abrir modal
   const handleOpenModal = (message, event) => {
-    const rect = event.target.getBoundingClientRect()
-    setModalPosition({ top: rect.top, left: rect.left, height: rect.height })
-    setSelectedMessage(message)
-    setIsModalOpen(true)
-  }
+    const rect = event.target.getBoundingClientRect();
+    setModalPosition({ top: rect.top, left: rect.left, height: rect.height });
+    setSelectedMessage(message);
+    setIsModalOpen(true);
+  };
 
-  //CLOSE MODAL
+  // Cerrar modal
   const handleCloseModal = () => {
-    setIsModalOpen(false)
-    setSelectedMessage(null)
-  }
+    setIsModalOpen(false);
+    setSelectedMessage(null);
+  };
 
-  //DELETE MESSAGE
+  // Eliminar mensaje
   const deleteMessages = () => {
-    actions.deleteMessages(selectedMessage)
-  }
-  
+    socket.emit("deleteMessage", { id: selectedMessage });
+    setIsModalOpen(false);
+  };
+
   return (
     <>
       <div className="w-full flex-1 px-50 bg-chat flex flex-col overflow-y-auto hide-scrollbar">
-        <div className="flex-grow  flex flex-col ">
+        <div className="flex-grow flex flex-col">
           <div className="flex flex-col py-5 justify-end flex-grow">
-            {messages.length > 0 ? (
-              messages.map((msg, index) => (
+            {messages[chatId]?.length > 0 ? (
+              messages[chatId].map((msg, index) => (
                 <div
                   key={index}
                   className={`w-full flex ${
-                    msg.sender_id === userId ? 'justify-end' : 'justify-start'
+                    msg.sender_id === userId ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <div className={`relative max-w-3xl flex mt-2 pl-3 pr-1.5 py-1 rounded-md shadow-sm gap-x-2 group
-                    ${msg.sender_id === userId ? 'bg-green-100' : 'bg-gray-100'}
-                    `}>
-                  <span 
-                    className="absolute top-0 right-0 m-2 text-gray-500 hidden group-hover:block cursor-pointer bg-opacity-20 backdrop-blur-sm rounded-sm"
-                    onClick={(event) => handleOpenModal(msg.id, event)}
+                  <div
+                    className={`relative max-w-3xl flex mt-2 pl-3 pr-1.5 py-1 rounded-md shadow-sm gap-x-2 group
+                    ${msg.sender_id === userId ? "bg-green-100" : "bg-gray-100"}
+                    `}
+                  >
+                    <span
+                      className="absolute top-0 right-0 m-2 text-gray-500 hidden group-hover:block cursor-pointer bg-opacity-20 backdrop-blur-sm rounded-sm"
+                      onClick={(event) => handleOpenModal(msg.id, event)}
                     >
-                      <ChevronDown/>
-                  </span>
+                      <ChevronDown />
+                    </span>
                     <div>
-                      {msg.type === 'audio' ? (
+                      {msg.type === "audio" ? (
                         <audio className="!bg-none" controls src={msg.content} />
                       ) : (
                         <p className="">{msg.content} </p>
@@ -153,18 +137,18 @@ function ContainerMessageText({ receivedId }) {
                       <p className="text-xs text-gray-500">{formatTimestamp(msg.created_at)}</p>
                     </div>
                     <div className="flex items-end">
-                    {msg.sender_id === userId && msg.seen ? (
-                      <CheckCheck color="#53BDEB" size={18} />
-                    ) : msg.sender_id === userId ? (
-                      <CheckCheck color="gray" size={18} />
-                    ) : null}
+                      {msg.sender_id === userId && msg.seen ? (
+                        <CheckCheck color="#53BDEB" size={18} />
+                      ) : msg.sender_id === userId ? (
+                        <CheckCheck color="gray" size={18} />
+                      ) : null}
                     </div>
                   </div>
                 </div>
               ))
             ) : (
               <div className="w-full flex items-center justify-start px-4">
-                <p></p>
+                <p>No messages yet</p>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -178,7 +162,7 @@ function ContainerMessageText({ receivedId }) {
           placeholder="Escriba un mensaje..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
         <AudioRecorder userId={userId} receivedId={receivedId} />
       </div>
