@@ -92,3 +92,23 @@ export const getContacts = async () => {
     };
   });
 };
+
+export const deleteMessage = async (messageId) => {
+  const db = await initDB();
+  const transaction = db.transaction("messages", "readwrite");
+  const store = transaction.objectStore("messages");
+
+  return new Promise((resolve, reject) => {
+    const request = store.delete(messageId);
+
+    request.onsuccess = () => {
+      console.log(`Message with ID ${messageId} deleted from IndexedDB`);
+      resolve();
+    };
+
+    request.onerror = () => {
+      console.error("Error deleting message from IndexedDB:", request.error);
+      reject(request.error);
+    };
+  });
+};

@@ -65,7 +65,7 @@ function Sidebar({ onSelectedContact }) {
         </div>
       </div>
       <div>
-        {combinedContacts.length > 0 && combinedContacts.map((contact) => {
+        {combinedContacts.map((contact) => {
           const chatId = `${contact.user_id}-${contact.contact_id}`;
           const lastMessage = messages[chatId]?.[messages[chatId].length - 1];
           const lastMessageTime = lastMessage?.created_at;

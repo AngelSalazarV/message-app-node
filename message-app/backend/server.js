@@ -85,22 +85,7 @@ app.get('/api/messages', async (req, res) => {
   res.json(data);
 })
 
-//delete messages
-app.delete('/api/messages', async (req, res) => {
-  const { id } = req.query
 
-  const { data, error } = await supabase
-    .from('messages')
-    .delete()
-    .eq('id', id)
-
-    if(error) {
-      return res.status(400).json({ message: 'Error delete message', error: error.message})
-    }
-
-    io.emit('messageDeleted', { id })
-    res.status(200).json({ message: 'Message deleted successfully', data})
-})
 
 //update messages seen status
 app.post('/api/messages/seen', async (req, res) => {
@@ -360,6 +345,26 @@ io.on('connection', (socket) => {
         receiver_id: savedMessage.receiver_id,
         sender_id: savedMessage.sender_id
       })
+  })
+
+  //delete messages from DB with socket.io
+  socket.on('deleteMessage', async ({ id }) => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', id)
+      
+      if(error) {
+        console.error('Error deleting message:', error.message)
+        return
+      }
+
+      io.emit('deleteMessage', { id })
+      console.log('Message deleted:', id)
+    }catch(error){
+      console.error('Error:', error)
+    }
   })
 
   //update message seen status

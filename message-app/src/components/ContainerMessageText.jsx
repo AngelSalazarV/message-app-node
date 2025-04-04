@@ -2,18 +2,23 @@ import { useState, useEffect, useRef, useContext } from "react";
 import { GlobalContext } from "../context/GlobalContext";
 import socket from "../client";
 import moment from "moment-timezone";
-import { CheckCheck, ChevronDown } from "lucide-react";
-import AudioRecorder from "./AudioRecorder";
-import MessagesActionModal from "./MessagesActionModal";
+import { CheckCheck, ChevronDown } from "lucide-react"
+import AudioRecorder from "./AudioRecorder"
+import MessagesActionModal from "./MessagesActionModal"
+
+const getChatId = (id1, id2) => {
+  return [id1, id2].sort().join("-");
+};
 
 function ContainerMessageText({ receivedId }) {
-  const { messages, loadMessages, addMessages } = useContext(GlobalContext);
+  const { messages, loadMessages, addMessages, deleteMessageFromState } = useContext(GlobalContext);
   const [message, setMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [modalPosition, setModalPosition] = useState(null);
   const messagesEndRef = useRef(null);
-  const chatId = `${receivedId}-${localStorage.getItem("userId")}`;
+
+  const chatId = getChatId(receivedId, localStorage.getItem("userId"));
   const userId = localStorage.getItem("userId");
 
   useEffect(() => {
@@ -22,7 +27,7 @@ function ContainerMessageText({ receivedId }) {
     return () => {
       setMessage("");
     };
-  }, [receivedId]);
+  }, [chatId, receivedId]);
 
   const sendMessage = () => {
     if (message.trim() !== "") {
@@ -31,38 +36,47 @@ function ContainerMessageText({ receivedId }) {
         receiver_id: receivedId,
         content: message,
       };
-      socket.emit("sendMessage", newMessage);
-      addMessages(chatId, [newMessage]);
+      socket.emit("sendMessage", newMessage)
       setMessage("");
     }
   };
 
   useEffect(() => {
+    // Update messages when a new message is received
     socket.on("receivedMessage", (newMessage) => {
-      if (
-        (newMessage.sender_id === userId && newMessage.receiver_id === receivedId) ||
-        (newMessage.sender_id === receivedId && newMessage.receiver_id === userId)
-      ) {
-        addMessages(chatId, [newMessage]);
+      // Calcular el chatId del mensaje recibido
+      const messageChatId = getChatId(newMessage.receiver_id, newMessage.sender_id);
+
+      // Guardar el mensaje en el estado global bajo el chatId correspondiente
+      addMessages(messageChatId, [newMessage]);
+      console.log("Mensaje recibido:", newMessage);
+      console.log("Chat activo:", chatId);
+      console.log("Chat del mensaje:", messageChatId)
+
+    });
+
+    socket.on("deleteMessage", async ({ id }) => {
+      try {
+        // Delete message from GlobalContext and IndexedDB
+        await deleteMessageFromState(chatId, id);
+      } catch (error) {
+        console.error("Error deleting message:", error);
       }
-    });
+    })
 
-    socket.on("messageDeleted", ({ id }) => {
-      addMessages(chatId, messages[chatId]?.filter((msg) => msg.id !== id));
-    });
-
+    // Clean up the socket listeners when the component unmounts
     return () => {
-      socket.off("receivedMessage");
-      socket.off("messageDeleted");
+      socket.off("receivedMessage")
+      socket.off("deleteMessage")
     };
-  }, [userId, receivedId, chatId, messages, addMessages]);
+  }, [userId, receivedId, chatId, addMessages, deleteMessageFromState])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
 
     // Actualizar el estado de los mensajes vistos
     const updateSeenStatus = async () => {
-      const unseenMessages = messages[chatId]?.filter((msg) => msg.receiver_id === userId && !msg.seen);
+      const unseenMessages = messages[chatId]?.filter((msg) => msg.receiver_id === userId && !msg.seen)
       for (const msg of unseenMessages) {
         await fetch(`http://localhost:3000/api/messages/seen`, {
           method: "POST",
@@ -71,35 +85,36 @@ function ContainerMessageText({ receivedId }) {
           },
           body: JSON.stringify({ messageId: msg.id }),
         });
-        socket.emit("messageSeen", { messageId: msg.id });
+        socket.emit("messageSeen", { messageId: msg.id })
       }
     };
     updateSeenStatus();
   }, [messages, chatId, userId]);
 
   const formatTimestamp = (timestamp) => {
-    const date = moment.utc(timestamp).tz(moment.tz.guess());
-    return date.format("HH:mm");
+    const date = moment.utc(timestamp).tz(moment.tz.guess())
+    return date.format("HH:mm")
   };
 
   // Abrir modal
   const handleOpenModal = (message, event) => {
     const rect = event.target.getBoundingClientRect();
-    setModalPosition({ top: rect.top, left: rect.left, height: rect.height });
-    setSelectedMessage(message);
-    setIsModalOpen(true);
+    setModalPosition({ top: rect.top, left: rect.left, height: rect.height })
+    setSelectedMessage(message)
+    console.log(message)
+    setIsModalOpen(true)
   };
 
   // Cerrar modal
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setSelectedMessage(null);
+    setSelectedMessage(null)
   };
 
   // Eliminar mensaje
   const deleteMessages = () => {
-    socket.emit("deleteMessage", { id: selectedMessage });
-    setIsModalOpen(false);
+    socket.emit("deleteMessage", { id: selectedMessage })
+    setIsModalOpen(false)
   };
 
   return (

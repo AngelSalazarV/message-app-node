@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from "react";
-import { initDB, getContacts, saveContacts, getMessages, saveMessages } from "../utils/indexedDB";
+import { initDB, getContacts, saveContacts, getMessages, saveMessages, deleteMessage } from "../utils/indexedDB";
 import { supabase } from "../client";
 
 export const GlobalContext = createContext();
@@ -15,11 +15,6 @@ export const GlobalProvider = ({ children }) => {
 
       const userId = localStorage.getItem("userId");
 
-      if (!userId) {
-        console.error("User ID not found in localStorage");
-        setLoading(false);
-        return;
-      }
 
       // Intentar cargar contactos desde IndexedDB
       const storedContacts = await getContacts();
@@ -102,13 +97,27 @@ export const GlobalProvider = ({ children }) => {
     }));
   };
 
+  const deleteMessageFromState = async (chatId, messageId) => {
+    // Eliminar el mensaje de IndexedDB
+    await deleteMessage(messageId);
+    
+    // Actualizar el estado global
+    setMessages((prev) => {
+      const updatedMessages = { ...prev };
+      if (updatedMessages[chatId]) {
+        updatedMessages[chatId] = updatedMessages[chatId].filter((msg) => msg.id !== messageId);
+      }
+      return updatedMessages;
+    });
+  }
+
   const addContacts = async (newContacts) => {
     await saveContacts(newContacts);
     setContacts((prev) => [...prev, ...newContacts]);
   };
 
   return (
-    <GlobalContext.Provider value={{ contacts, messages, loadMessages, addMessages, addContacts, loading }}>
+    <GlobalContext.Provider value={{ contacts, messages, loadMessages, addMessages, addContacts, deleteMessageFromState, loading }}>
       {children}
     </GlobalContext.Provider>
   );
