@@ -57,16 +57,30 @@ const getState = ({ getStore, setStore }) => {
         }
       },
       addContact: async (userId, contactId) => {
-        try{
-          await fetch(`http://localhost:3000/api/contacts`, {
-            method: 'POST', 
+        try {
+          const res = await fetch(`http://localhost:3000/api/contacts`, {
+            method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
             },
-            body: JSON.stringify({user_id: userId, contact_id: contactId})
-          })
-        }catch(error){
-          console.error('Error:', error)
+            body: JSON.stringify({ user_id: userId, contact_id: contactId }),
+          });
+      
+          if (!res.ok) {
+            const errorData = await res.json();
+            console.error('Error adding contact:', errorData.message);
+            return;
+          }
+      
+          const { sender } = await res.json(); 
+      
+          // Actualizar el estado global con el nuevo contacto
+          const store = getStore();
+          setStore({ ...store, contacts: [...store.contacts, sender] });
+      
+          console.log('Contact added successfully:', sender);
+        } catch (error) {
+          console.error('Error adding contact:', error.message);
         }
       },
       deleteMessages: async (messageId) => {

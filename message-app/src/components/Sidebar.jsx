@@ -16,7 +16,7 @@ function Sidebar({ onSelectedContact }) {
       setSearchResults((prev) => {
         const updatedContacts = prev.map((contact) => {
           if (contact.contact_id === message.sender_id || contact.contact_id === message.receiver_id) {
-            return { ...contact, last_message: message };
+            return { ...contact, last_message: message, username: contact.username };
           }
           return contact;
         });

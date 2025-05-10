@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useContext } from "react";
+import { Context } from "../context/AppContext"
 import { GlobalContext } from "../context/GlobalContext";
 import socket from "../client";
 import moment from "moment-timezone";
@@ -11,7 +12,8 @@ const getChatId = (id1, id2) => {
 };
 
 function ContainerMessageText({ receivedId }) {
-  const { messages, loadMessages, addMessages, deleteMessageFromState } = useContext(GlobalContext);
+  const { messages, loadMessages, addMessages, deleteMessageFromState, contacts } = useContext(GlobalContext);
+  const { actions } = useContext(Context);
   const [message, setMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -29,14 +31,26 @@ function ContainerMessageText({ receivedId }) {
     };
   }, [chatId, receivedId]);
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (message.trim() !== "") {
       const newMessage = {
         sender_id: userId,
         receiver_id: receivedId,
         content: message,
       };
+
+
+      // Verificar si el contacto existe
+      const contactExist = contacts.some(contact => contact.contact_id === receivedId)
+
+      if (!contactExist) {
+        await actions.addContact(userId, receivedId)
+      }
+
+      // Emitir el mensaje al servidor
       socket.emit("sendMessage", newMessage)
+
+      // Limpiar el campo de entrada
       setMessage("");
     }
   };
@@ -50,9 +64,6 @@ function ContainerMessageText({ receivedId }) {
       // Guardar el mensaje en el estado global bajo el chatId correspondiente
       addMessages(messageChatId, [newMessage]);
       console.log("Mensaje recibido:", newMessage);
-      console.log("Chat activo:", chatId);
-      console.log("Chat del mensaje:", messageChatId)
-
     });
 
     socket.on("deleteMessage", async ({ id }) => {
