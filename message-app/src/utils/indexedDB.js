@@ -40,23 +40,17 @@ export const getMessages = async (sender_id, receiver_id, limit = 20, offset = 0
   const db = await initDB();
   const transaction = db.transaction("messages", "readonly");
   const store = transaction.objectStore("messages");
-  const index = store.index("chat");
 
   return new Promise((resolve, reject) => {
-    const request = index.openCursor([sender_id, receiver_id], "prev");
+    const request = store.getAll();
 
-    const results = [];
-    let count = 0;
-
-    request.onsuccess = (event) => {
-      const cursor = event.target.result;
-      if (cursor && count < limit + offset) {
-        if (count >= offset) results.push(cursor.value);
-        count++;
-        cursor.continue();
-      } else {
-        resolve(results);
-      }
+    request.onsuccess = () => {
+      const results = request.result.filter(
+        (msg) =>
+          (msg.sender_id === sender_id && msg.receiver_id === receiver_id) ||
+          (msg.sender_id === receiver_id && msg.receiver_id === sender_id)
+      );
+      resolve(results.slice(offset, offset + limit));
     };
 
     request.onerror = () => reject(request.error);

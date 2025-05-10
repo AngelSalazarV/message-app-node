@@ -88,25 +88,27 @@ export const GlobalProvider = ({ children }) => {
     return () => {
       socket.off("newContact");
     }
-  }, []);
+  }, [])
 
   const loadMessages = async (chatId, sender_id, receiver_id, limit = 20, offset = 0) => {
+    // Obtener mensajes desde IndexedDB o Supabase
     const storedMessages = await getMessages(sender_id, receiver_id, limit, offset);
-
+  
     setMessages((prev) => {
-      const existingMessages = prev[chatId] || [];
       const newMessages = storedMessages.filter(
-        (msg) => !existingMessages.some((existingMsg) => existingMsg.id === msg.id)
+        (msg) =>
+          (msg.sender_id === sender_id && msg.receiver_id === receiver_id) ||
+          (msg.sender_id === receiver_id && msg.receiver_id === sender_id)
       );
-
+  
       return {
         ...prev,
-        [chatId]: [...existingMessages, ...newMessages].sort(
+        [chatId]: [...newMessages].sort(
           (a, b) => new Date(a.created_at) - new Date(b.created_at)
         ),
       };
     });
-  };
+  }
 
   const addMessages = async (chatId, newMessages) => {
     await saveMessages(newMessages);
