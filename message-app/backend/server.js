@@ -112,6 +112,7 @@ app.get('/api/contacts', async (req, res) => {
   const { data: contacts, error: contactsError } = await supabase
     .from('contacts')
     .select(`
+      id,
       contact_id, 
       users:contact_id (username)
       `)
@@ -125,7 +126,7 @@ app.get('/api/contacts', async (req, res) => {
     const contactsWithLastMessage = await Promise.all(contacts.map(async (contact) => {
       const { data: lastMessage, error: lastMessageError } = await supabase
       .from('messages')
-      .select('content, created_at, type')
+      .select('id, content, created_at, type, sender_id, receiver_id')
       .or(`and(sender_id.eq.${contact.contact_id},receiver_id.eq.${user_id}),and(sender_id.eq.${user_id},receiver_id.eq.${contact.contact_id})`)
       .order('created_at', { ascending: false })
       .limit(1);
@@ -339,6 +340,7 @@ io.on('connection', (socket) => {
 
       //emit event to update last message in sidebar
       io.emit('newLastMessage', { message: savedMessage })
+      console.log('Message sent:', savedMessage)
 
       //Emitir evento para actualizar conteo mensajes no leidos
       io.emit('updateUnreadCount', {

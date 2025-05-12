@@ -19,26 +19,17 @@ export const GlobalProvider = ({ children }) => {
       // Intentar cargar contactos desde IndexedDB
       const storedContacts = await getContacts();
       if (storedContacts.length > 0) {
-        console.log("Contacts loaded from IndexedDB:", storedContacts);
+        //console.log("Contacts loaded from IndexedDB:", storedContacts);
         setContacts(storedContacts);
       } else {
-        const { data: supabaseContacts, error: contactsError } = await supabase
-          .from("contacts")
-          .select(`
-            id,
-            user_id,
-            contact_id,
-            created_at,
-            users:contact_id (username)
-          `)
-          .eq("user_id", userId);
-
-        if (contactsError) {
-          console.error("Error fetching contacts from Supabase:", contactsError.message);
-        } else {
-          console.log("Contacts fetched from Supabase:", supabaseContacts);
-          await saveContacts(supabaseContacts);
-          setContacts(supabaseContacts);
+        try {
+          const response = await fetch(`http://localhost:3000/api/contacts?user_id=${userId}`);
+          const backendContacts = await response.json();
+          console.log("Contacts fetched from backend:", backendContacts);
+          await saveContacts(backendContacts);
+          setContacts(backendContacts);
+        } catch (error) {
+          console.error("Error fetching contacts from backend:", error);
         }
       }
 
@@ -110,6 +101,8 @@ export const GlobalProvider = ({ children }) => {
     });
   }
 
+  
+
   const addMessages = async (chatId, newMessages) => {
     await saveMessages(newMessages);
     setMessages((prev) => ({
@@ -150,10 +143,23 @@ export const GlobalProvider = ({ children }) => {
     setContacts((prev) => [...prev, ...contactsToAdd])
 
     console.log("New contacts added:", contactsToAdd)
-  };
+  }
+
+  const updateLastMessage = async (message) => {
+    setContacts((prev) => {
+      const updatedContacts = prev.map((contact) =>
+        contact.contact_id === message.sender_id || contact.contact_id === message.receiver_id
+          ? { ...contact, last_message: message }
+          : contact
+      );
+      // Actualiza también en IndexedDB
+      saveContacts(updatedContacts);
+      return updatedContacts;
+    });
+  }
 
   return (
-    <GlobalContext.Provider value={{ contacts, messages, loadMessages, addMessages, addContacts, deleteMessageFromState, loading }}>
+    <GlobalContext.Provider value={{ contacts, messages, loadMessages, addMessages, addContacts, deleteMessageFromState, loading, updateLastMessage }}>
       {children}
     </GlobalContext.Provider>
   );

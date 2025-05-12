@@ -4,30 +4,20 @@ import socket from "../client";
 import ContactCard from "./ContactCard";
 
 function Sidebar({ onSelectedContact }) {
-  const { contacts, messages } = useContext(GlobalContext);
+  const { contacts, messages, updateLastMessage } = useContext(GlobalContext);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const userId = localStorage.getItem("userId");
+
+  const getChatId = (id1, id2) => {
+    return [id1, id2].sort().join("-");
+  };
 
 
   useEffect(() => {
     socket.on("newLastMessage", ({ message }) => {
       // Actualizar el último mensaje en los contactos
-      setSearchResults((prev) => {
-        const updatedContacts = prev.map((contact) => {
-          if (contact.contact_id === message.sender_id || contact.contact_id === message.receiver_id) {
-            return { ...contact, last_message: message, username: contact.username };
-          }
-          return contact;
-        });
-
-        // Ordenar los contactos por la fecha del último mensaje
-        return updatedContacts.sort((a, b) => {
-          const dateA = new Date(a.last_message?.created_at || 0);
-          const dateB = new Date(b.last_message?.created_at || 0);
-          return dateB - dateA; // Orden descendente
-        });
-      });
+      updateLastMessage(message);
     });
 
     return () => {
@@ -66,8 +56,8 @@ function Sidebar({ onSelectedContact }) {
       </div>
       <div>
         {combinedContacts.map((contact) => {
-          const chatId = `${contact.user_id}-${contact.contact_id}`;
-          const lastMessage = messages[chatId]?.[messages[chatId].length - 1];
+          const chatId = getChatId(contact.contact_id, userId);
+          const lastMessage = contact.last_message
           const lastMessageTime = lastMessage?.created_at;
           const lastMessageContent = lastMessage?.type === "audio" ? "Audio" : lastMessage?.content;
           const unreadCount = messages[chatId]?.filter((msg) => !msg.seen).length || 0;

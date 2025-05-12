@@ -9,7 +9,7 @@ import MessagesActionModal from "./MessagesActionModal"
 
 const getChatId = (id1, id2) => {
   return [id1, id2].sort().join("-");
-};
+}
 
 function ContainerMessageText({ receivedId }) {
   const { messages, loadMessages, addMessages, deleteMessageFromState, contacts } = useContext(GlobalContext);
