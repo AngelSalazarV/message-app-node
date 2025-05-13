@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useCallback } from "react";
+import { createContext, useState, useEffect } from "react";
 import { initDB, getContacts, saveContacts, getMessages, saveMessages, deleteMessage } from "../utils/indexedDB";
 import socket, { supabase } from "../client";
 
@@ -7,7 +7,7 @@ export const GlobalContext = createContext();
 export const GlobalProvider = ({ children }) => {
   const [contacts, setContacts] = useState([]);
   const [messages, setMessages] = useState({});
-  const [loading, setLoading] = useState(true); // Estado de carga
+  const [loading, setLoading] = useState(true); 
 
   useEffect(() => {
     const initializeData = async () => {
@@ -19,7 +19,6 @@ export const GlobalProvider = ({ children }) => {
       // Intentar cargar contactos desde IndexedDB
       const storedContacts = await getContacts();
       if (storedContacts.length > 0) {
-        //console.log("Contacts loaded from IndexedDB:", storedContacts);
         setContacts(storedContacts);
       } else {
         try {
@@ -41,7 +40,6 @@ export const GlobalProvider = ({ children }) => {
       if (messagesError) {
         console.error("Error fetching messages from Supabase:", messagesError.message);
       } else {
-        console.log("Messages fetched from Supabase:", supabaseMessages);
         await saveMessages(supabaseMessages);
 
         // Organizar mensajes por chat ID y ordenarlos por fecha
@@ -79,50 +77,35 @@ export const GlobalProvider = ({ children }) => {
     return () => {
       socket.off("newContact");
     }
-  }, [])
+  }, [contacts])
 
   useEffect(() => {
     socket.on("messageSeen", (updatedMessage) => {
-      // Actualiza el mensaje en el estado global/messages
-      setMessages((prev) => {
-        const chatId = [updatedMessage.sender_id, updatedMessage.receiver_id].sort().join("-");
-        if (!prev[chatId]) return prev;
-        const updated = prev[chatId].map(msg =>
+      const chatId = [updatedMessage.sender_id, updatedMessage.receiver_id].sort().join("-");
+      setMessages((prev) => ({
+        ...prev,
+        [chatId]: prev[chatId]?.map(msg =>
           msg.id === updatedMessage.id ? { ...msg, seen: true } : msg
-        );
-        return { ...prev, [chatId]: updated };
-      });
+        ),
+      }));
     });
 
     return () => {
       socket.off("messageSeen");
     };
-  }, [])
-
-   const addMessages = useCallback(async (chatId, newMessages) => {
-    await saveMessages(newMessages);
-    setMessages((prev) => {
-      const updated = [...(prev[chatId] || []), ...newMessages].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      console.log("[addMessages] updated state for", chatId, updated);
-      return {
-        ...prev,
-        [chatId]: updated,
-      };
-    });
   }, []);
 
-  useEffect(() => {
-    socket.on("receivedMessage", (newMessage) => {
-      const chatId = [newMessage.sender_id, newMessage.receiver_id].sort().join("-");
-      addMessages(chatId, [newMessage]);
-    });
-
-    return () => {
-      socket.off("receivedMessage");
-    };
-  }, [addMessages]);
-
- 
+  //  const addMessages = useCallback(async (chatId, newMessages) => {
+  //   await saveMessages(newMessages);
+  //   setMessages((prev) => {
+  //     const updated = [...(prev[chatId] || []), ...newMessages].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  //     console.log("[addMessages] updated state for", chatId, updated);
+  //     return {
+  //       ...prev,
+  //       [chatId]: updated,
+  //     };
+  //   });
+  // }, []);
 
   const loadMessages = async (chatId, sender_id, receiver_id, limit = 20, offset = 0) => {
     // Espera ambos resultados antes de actualizar el estado
@@ -148,10 +131,20 @@ export const GlobalProvider = ({ children }) => {
     }));
   };
 
-  
+  useEffect(() => {
+    socket.on("receivedMessage", (newMessage) => {
+      const chatId = [newMessage.sender_id, newMessage.receiver_id].sort().join("-");
+      setMessages((prev) => ({
+        ...prev,
+        [chatId]: [...(prev[chatId] || []), newMessage].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)),
+      }));
+    });
 
+    return () => {
+      socket.off("receivedMessage");
+    };
+  }, []);
  
-
   const deleteMessageFromState = async (chatId, messageId) => {
     // Eliminar el mensaje de IndexedDB
     await deleteMessage(messageId);
@@ -200,7 +193,7 @@ export const GlobalProvider = ({ children }) => {
   }
 
   return (
-    <GlobalContext.Provider value={{ contacts, messages, loadMessages, addMessages, addContacts, deleteMessageFromState, loading, updateLastMessage }}>
+    <GlobalContext.Provider value={{ contacts, messages, loadMessages, addContacts, deleteMessageFromState, loading, updateLastMessage }}>
       {children}
     </GlobalContext.Provider>
   );

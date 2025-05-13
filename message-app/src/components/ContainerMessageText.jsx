@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useContext } from "react";
-import { Context } from "../context/AppContext"
 import { GlobalContext } from "../context/GlobalContext";
 import socket from "../client";
 import moment from "moment-timezone";
@@ -12,8 +11,7 @@ const getChatId = (id1, id2) => {
 }
 
 function ContainerMessageText({ receivedId }) {
-  const { messages, loadMessages, addMessages, deleteMessageFromState, contacts } = useContext(GlobalContext);
-  const { actions } = useContext(Context);
+  const { messages, loadMessages, deleteMessageFromState } = useContext(GlobalContext);
   const [message, setMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -22,6 +20,8 @@ function ContainerMessageText({ receivedId }) {
 
   const chatId = getChatId(receivedId, localStorage.getItem("userId"));
   const userId = localStorage.getItem("userId");
+
+  const seenMessagesRef = useRef(new Set());
 
   useEffect(() => {
     loadMessages(chatId, userId, receivedId);
@@ -40,12 +40,8 @@ function ContainerMessageText({ receivedId }) {
       };
 
 
-      // Verificar si el contacto existe
-      const contactExist = contacts.some(contact => contact.contact_id === receivedId)
-
-      if (!contactExist) {
-        await actions.addContact(userId, receivedId)
-      }
+     
+      
 
       // Emitir el mensaje al servidor
       socket.emit("sendMessage", newMessage)
@@ -56,19 +52,6 @@ function ContainerMessageText({ receivedId }) {
   };
 
   useEffect(() => {
-    // Update messages when a new message is received
-    socket.on("receivedMessage", (newMessage) => {
-      // Calcular el chatId del mensaje recibido
-      const messageChatId = getChatId(newMessage.sender_id, newMessage.receiver_id);
-
-
-      // Guardar el mensaje en el estado global bajo el chatId correspondiente
-      addMessages(messageChatId, [newMessage]);
-      console.log("Mensaje recibido:", newMessage);
-      loadMessages(chatId, userId, receivedId);
-
-    });
-
     socket.on("deleteMessage", async ({ id }) => {
       try {
         // Delete message from GlobalContext and IndexedDB
@@ -80,26 +63,28 @@ function ContainerMessageText({ receivedId }) {
 
     // Clean up the socket listeners when the component unmounts
     return () => {
-      socket.off("receivedMessage")
       socket.off("deleteMessage")
     };
-  }, [userId, receivedId, chatId, addMessages, deleteMessageFromState])
+  }, [chatId, deleteMessageFromState])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
-    // Actualizar el estado de los mensajes vistos
     const updateSeenStatus = async () => {
-      const unseenMessages = messages[chatId]?.filter((msg) => msg.receiver_id === userId && !msg.seen)
-      for (const msg of unseenMessages) {
+      const unseenMessages = messages[chatId]?.filter(
+        (msg) =>
+          msg.receiver_id === userId &&
+          !msg.seen &&
+          !seenMessagesRef.current.has(msg.id)
+      );
+      for (const msg of unseenMessages || []) {
+        seenMessagesRef.current.add(msg.id);
         await fetch(`http://localhost:3000/api/messages/seen`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ messageId: msg.id }),
         });
-        socket.emit("messageSeen", { messageId: msg.id })
+        socket.emit("messageSeen", { messageId: msg.id });
       }
     };
     updateSeenStatus();

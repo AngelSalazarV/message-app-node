@@ -47,8 +47,6 @@ export const getMessages = async (sender_id, receiver_id, limit = 20, offset = 0
     const request = store.getAll();
 
     request.onsuccess = () => {
-      console.log("[getMessages] Todos los mensajes en IndexedDB:", request.result);
-
       const results = request.result.filter(
         (msg) =>
           (msg.sender_id === sender_id && msg.receiver_id === receiver_id) ||
@@ -80,7 +78,6 @@ export const getContacts = async () => {
     const request = store.getAll();
 
     request.onsuccess = () => {
-      console.log("Contacts fetched from IndexedDB:", request.result); // Verifica los datos aquí
       resolve(request.result);
     };
 
