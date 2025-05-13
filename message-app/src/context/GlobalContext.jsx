@@ -81,6 +81,24 @@ export const GlobalProvider = ({ children }) => {
     }
   }, [])
 
+  useEffect(() => {
+  socket.on("messageSeen", (updatedMessage) => {
+    // Actualiza el mensaje en el estado global/messages
+    setMessages((prev) => {
+      const chatId = [updatedMessage.sender_id, updatedMessage.receiver_id].sort().join("-");
+      if (!prev[chatId]) return prev;
+      const updated = prev[chatId].map(msg =>
+        msg.id === updatedMessage.id ? { ...msg, seen: true } : msg
+      );
+      return { ...prev, [chatId]: updated };
+    });
+  });
+
+  return () => {
+    socket.off("messageSeen");
+  };
+}, [])
+
   const loadMessages = async (chatId, sender_id, receiver_id, limit = 20, offset = 0) => {
     // Obtener mensajes desde IndexedDB o Supabase
     const storedMessages = await getMessages(sender_id, receiver_id, limit, offset);
