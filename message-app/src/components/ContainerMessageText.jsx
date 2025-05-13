@@ -39,10 +39,6 @@ function ContainerMessageText({ receivedId }) {
         content: message,
       };
 
-
-     
-      
-
       // Emitir el mensaje al servidor
       socket.emit("sendMessage", newMessage)
 
@@ -68,7 +64,7 @@ function ContainerMessageText({ receivedId }) {
   }, [chatId, deleteMessageFromState])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "auto" });
 
     const updateSeenStatus = async () => {
       const unseenMessages = messages[chatId]?.filter(
@@ -165,8 +161,8 @@ function ContainerMessageText({ receivedId }) {
                 <p>No messages yet</p>
               </div>
             )}
-            <div ref={messagesEndRef} />
           </div>
+          <div ref={messagesEndRef} />
         </div>
       </div>
       <div className="w-full flex px-5 bg-gray-200 gap-x-2">
