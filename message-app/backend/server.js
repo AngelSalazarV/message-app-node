@@ -340,7 +340,6 @@ io.on('connection', (socket) => {
 
       //emit event to update last message in sidebar
       io.emit('newLastMessage', { message: savedMessage })
-      console.log('Message sent:', savedMessage)
 
       //Emitir evento para actualizar conteo mensajes no leidos
       io.emit('updateUnreadCount', {

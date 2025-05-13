@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect, useCallback } from "react";
 import { initDB, getContacts, saveContacts, getMessages, saveMessages, deleteMessage } from "../utils/indexedDB";
 import socket, { supabase } from "../client";
 
@@ -46,7 +46,7 @@ export const GlobalProvider = ({ children }) => {
 
         // Organizar mensajes por chat ID y ordenarlos por fecha
         const messagesByChat = supabaseMessages.reduce((acc, message) => {
-          const chatId = `${message.sender_id}-${message.receiver_id}`;
+          const chatId = [message.sender_id, message.receiver_id].sort().join("-");
           if (!acc[chatId]) acc[chatId] = [];
           acc[chatId].push(message);
           acc[chatId].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
@@ -82,52 +82,75 @@ export const GlobalProvider = ({ children }) => {
   }, [])
 
   useEffect(() => {
-  socket.on("messageSeen", (updatedMessage) => {
-    // Actualiza el mensaje en el estado global/messages
-    setMessages((prev) => {
-      const chatId = [updatedMessage.sender_id, updatedMessage.receiver_id].sort().join("-");
-      if (!prev[chatId]) return prev;
-      const updated = prev[chatId].map(msg =>
-        msg.id === updatedMessage.id ? { ...msg, seen: true } : msg
-      );
-      return { ...prev, [chatId]: updated };
+    socket.on("messageSeen", (updatedMessage) => {
+      // Actualiza el mensaje en el estado global/messages
+      setMessages((prev) => {
+        const chatId = [updatedMessage.sender_id, updatedMessage.receiver_id].sort().join("-");
+        if (!prev[chatId]) return prev;
+        const updated = prev[chatId].map(msg =>
+          msg.id === updatedMessage.id ? { ...msg, seen: true } : msg
+        );
+        return { ...prev, [chatId]: updated };
+      });
     });
-  });
 
-  return () => {
-    socket.off("messageSeen");
-  };
-}, [])
+    return () => {
+      socket.off("messageSeen");
+    };
+  }, [])
 
-  const loadMessages = async (chatId, sender_id, receiver_id, limit = 20, offset = 0) => {
-    // Obtener mensajes desde IndexedDB o Supabase
-    const storedMessages = await getMessages(sender_id, receiver_id, limit, offset);
-  
+   const addMessages = useCallback(async (chatId, newMessages) => {
+    await saveMessages(newMessages);
     setMessages((prev) => {
-      const newMessages = storedMessages.filter(
-        (msg) =>
-          (msg.sender_id === sender_id && msg.receiver_id === receiver_id) ||
-          (msg.sender_id === receiver_id && msg.receiver_id === sender_id)
-      );
-  
+      const updated = [...(prev[chatId] || []), ...newMessages].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      console.log("[addMessages] updated state for", chatId, updated);
       return {
         ...prev,
-        [chatId]: [...newMessages].sort(
-          (a, b) => new Date(a.created_at) - new Date(b.created_at)
-        ),
+        [chatId]: updated,
       };
     });
-  }
+  }, []);
+
+  useEffect(() => {
+    socket.on("receivedMessage", (newMessage) => {
+      const chatId = [newMessage.sender_id, newMessage.receiver_id].sort().join("-");
+      addMessages(chatId, [newMessage]);
+    });
+
+    return () => {
+      socket.off("receivedMessage");
+    };
+  }, [addMessages]);
+
+ 
+
+  const loadMessages = async (chatId, sender_id, receiver_id, limit = 20, offset = 0) => {
+    // Espera ambos resultados antes de actualizar el estado
+    const [storedMessages, backendResponse] = await Promise.all([
+      getMessages(sender_id, receiver_id, limit, offset),
+      fetch(`http://localhost:3000/api/messages?sender_id=${sender_id}&receiver_id=${receiver_id}`)
+    ]);
+    const backendMessages = await backendResponse.json();
+
+    // Combina y evita duplicados
+    const allMessages = [...storedMessages, ...backendMessages].reduce((acc, msg) => {
+      if (!acc.find(m => m.id === msg.id)) acc.push(msg);
+      return acc;
+    }, []);
+
+    // Guarda en IndexedDB solo los nuevos mensajes
+    await saveMessages(allMessages);
+
+    // Actualiza el estado global SOLO UNA VEZ
+    setMessages((prev) => ({
+      ...prev,
+      [chatId]: allMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)),
+    }));
+  };
 
   
 
-  const addMessages = async (chatId, newMessages) => {
-    await saveMessages(newMessages);
-    setMessages((prev) => ({
-      ...prev,
-      [chatId]: [...(prev[chatId] || []), ...newMessages].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)),
-    }));
-  };
+ 
 
   const deleteMessageFromState = async (chatId, messageId) => {
     // Eliminar el mensaje de IndexedDB

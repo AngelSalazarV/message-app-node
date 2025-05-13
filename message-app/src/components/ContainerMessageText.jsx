@@ -59,11 +59,14 @@ function ContainerMessageText({ receivedId }) {
     // Update messages when a new message is received
     socket.on("receivedMessage", (newMessage) => {
       // Calcular el chatId del mensaje recibido
-      const messageChatId = getChatId(newMessage.receiver_id, newMessage.sender_id);
+      const messageChatId = getChatId(newMessage.sender_id, newMessage.receiver_id);
+
 
       // Guardar el mensaje en el estado global bajo el chatId correspondiente
       addMessages(messageChatId, [newMessage]);
       console.log("Mensaje recibido:", newMessage);
+      loadMessages(chatId, userId, receivedId);
+
     });
 
     socket.on("deleteMessage", async ({ id }) => {

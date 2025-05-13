@@ -31,7 +31,9 @@ export const saveMessages = async (messages) => {
   const transaction = db.transaction("messages", "readwrite");
   const store = transaction.objectStore("messages");
 
-  messages.forEach((message) => store.put(message));
+  messages.forEach((message) => {
+    store.put(message);
+  });
 
   return transaction.complete;
 };
@@ -45,6 +47,8 @@ export const getMessages = async (sender_id, receiver_id, limit = 20, offset = 0
     const request = store.getAll();
 
     request.onsuccess = () => {
+      console.log("[getMessages] Todos los mensajes en IndexedDB:", request.result);
+
       const results = request.result.filter(
         (msg) =>
           (msg.sender_id === sender_id && msg.receiver_id === receiver_id) ||
