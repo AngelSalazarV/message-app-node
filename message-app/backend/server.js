@@ -297,6 +297,8 @@ app.post('/api/messages/audio', upload.single('audio'), async (req, res) => {
     io.to(senderSocketId).emit('receivedMessage', messageData[0]);
   }
 
+  io.emit('newLastMessage', { message: messageData[0] });
+
   res.json(messageData[0]);
 })
 

@@ -59,8 +59,10 @@ function Sidebar({ onSelectedContact }) {
           const chatId = getChatId(contact.contact_id, userId);
           const lastMessage = contact.last_message
           const lastMessageTime = lastMessage?.created_at;
-          const lastMessageContent = lastMessage?.type === "audio" ? "Audio" : lastMessage?.content;
+          const lastMessageContent = lastMessage.type === "audio" ? "Audio" : lastMessage?.content;
           const unreadCount = messages[chatId]?.filter((msg) => !msg.seen).length || 0;
+
+          console.log("lastMessage:", lastMessage)
   
           return (
             <div key={chatId} onClick={() => onSelectedContact(contact)}>

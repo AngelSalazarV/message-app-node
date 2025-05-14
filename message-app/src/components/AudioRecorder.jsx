@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import socket from "../client";
 import { Mic, CirclePause, SendHorizonal, Trash } from "lucide-react";
 
 function AudioRecorder({ userId, receivedId }) {
@@ -55,8 +54,6 @@ function AudioRecorder({ userId, receivedId }) {
     
 
     if (response.ok) {
-      const audioMessage = await response.json();
-      socket.emit("sendMessage", audioMessage);
       setAudioBlob(null);
     }
   };
