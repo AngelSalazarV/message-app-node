@@ -393,11 +393,16 @@ io.on('connection', (socket) => {
 
     const receiverSocketId = users[updatedMessage.receiver_id];
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit('messagesSeen', {
-        sender_id: updatedMessage.sender_id,
-        receiver_id: updatedMessage.receiver_id,
-      });
+      io.to(receiverSocketId).emit('messageSeen', updatedMessage); 
     }
+
+    // const receiverSocketId = users[updatedMessage.receiver_id];
+    // if (receiverSocketId) {
+    //   io.to(receiverSocketId).emit('messagesSeen', {
+    //     sender_id: updatedMessage.sender_id,
+    //     receiver_id: updatedMessage.receiver_id,
+    //   });
+    // }
   })
 
   socket.on('disconnect', () => {

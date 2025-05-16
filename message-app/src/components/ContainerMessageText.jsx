@@ -21,7 +21,6 @@ function ContainerMessageText({ receivedId }) {
   const chatId = getChatId(receivedId, localStorage.getItem("userId"));
   const userId = localStorage.getItem("userId");
 
-  const seenMessagesRef = useRef(new Set());
 
   useEffect(() => {
     loadMessages(chatId, userId, receivedId);
@@ -66,25 +65,20 @@ function ContainerMessageText({ receivedId }) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "auto" });
 
-    const updateSeenStatus = async () => {
-      const unseenMessages = messages[chatId]?.filter(
-        (msg) =>
-          msg.receiver_id === userId &&
-          !msg.seen &&
-          !seenMessagesRef.current.has(msg.id)
-      );
-      for (const msg of unseenMessages || []) {
-        seenMessagesRef.current.add(msg.id);
-        await fetch(`http://localhost:3000/api/messages/seen`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messageId: msg.id }),
-        });
-        socket.emit("messageSeen", { messageId: msg.id });
-      }
-    };
-    updateSeenStatus();
-  }, [messages, chatId, userId]);
+    const unseenMessages = messages[chatId]?.filter(
+      (msg) =>
+        msg.receiver_id === userId &&
+        !msg.seen
+    );
+    unseenMessages?.forEach((msg) => {
+      fetch(`http://localhost:3000/api/messages/seen`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId: msg.id }),
+      });
+      socket.emit("messageSeen", { messageId: msg.id }); 
+    });
+  }, [messages, chatId, userId])
 
   const formatTimestamp = (timestamp) => {
     const date = moment.utc(timestamp).tz(moment.tz.guess())
