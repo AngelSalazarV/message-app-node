@@ -41,9 +41,9 @@ function Sidebar({ onSelectedContact }) {
   const combinedContacts = search.length > 2 ? searchResults : contacts;
 
   return (
-    <div className="w-100 flex flex-col bg-gray-100 h-screen border-r border-gray-200">
-      <div className="w-full bg-white px-3 py-2">
-        <div className="flex flex-col gap-y-4">
+    <div className="w-100 flex flex-col h-screen border-r border-gray-200 pr-2">
+      <div className="w-full px-3 py-2 border-b border-gray-200">
+        <div className="flex flex-col gap-y-4 mb-5">
           <h1 className="font-semibold text-2xl">Chats</h1>
           <input
             type="text"
@@ -63,7 +63,9 @@ function Sidebar({ onSelectedContact }) {
           const unreadCount = messages[chatId]?.filter((msg) => !msg.seen && msg.receiver_id === userId).length || 0;
 
           return (
-            <div key={chatId} onClick={() => onSelectedContact(contact)}>
+            <div key={chatId} onClick={() => onSelectedContact(contact)}
+              className="cursor-pointer hover:bg-gray-100"
+            >
               <ContactCard
                 name={contact.username || contact.users?.username} // Cambia esto si tienes un campo de nombre
                 lastMessageTime={lastMessageTime}
