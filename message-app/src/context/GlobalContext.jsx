@@ -8,12 +8,18 @@ export const GlobalProvider = ({ children }) => {
   const [contacts, setContacts] = useState([]);
   const [messages, setMessages] = useState({});
   const [loading, setLoading] = useState(true); 
+  const [ userId, setUserId ] = useState(localStorage.getItem("userId"));
 
   useEffect(() => {
     const initializeData = async () => {
       await initDB();
 
-      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        setContacts([]);
+        setMessages({});
+        setLoading(false);
+        return;
+      }
 
 
       // Intentar cargar contactos desde IndexedDB
@@ -58,7 +64,7 @@ export const GlobalProvider = ({ children }) => {
     };
 
     initializeData();
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     socket.on("newContact", async ({contact}) => {
@@ -193,7 +199,7 @@ export const GlobalProvider = ({ children }) => {
   }
 
   return (
-    <GlobalContext.Provider value={{ contacts, messages, loadMessages, addContacts, deleteMessageFromState, loading, updateLastMessage }}>
+    <GlobalContext.Provider value={{ contacts, messages, loadMessages, addContacts, deleteMessageFromState, loading, updateLastMessage, userId, setUserId }}>
       {children}
     </GlobalContext.Provider>
   );

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { useNavigate } from 'react-router-dom'
 import { Toaster, toast } from 'sonner'
 import { Context } from '../context/AppContext.jsx'
+import { GlobalContext } from '../context/GlobalContext.jsx'
 
 
 const supabaseUrl = "https://kiinqpxnutbuauziwbbu.supabase.co"
@@ -12,6 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 export function Login() {
   const { actions } = useContext(Context)
+  const { setUserId } = useContext(GlobalContext)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
@@ -49,7 +51,9 @@ export function Login() {
   const handleLogin = async (e) => {
     e.preventDefault()
     try{
-      await actions.login({email, password})
+      const user = await actions.login({email, password})
+      setUserId(user.user.id)
+      localStorage.setItem('userId', user.id)
       navigate('/')
     }catch(error){
       toast.error(error.message)
