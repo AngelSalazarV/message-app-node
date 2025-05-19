@@ -1,6 +1,6 @@
 import moment from "moment-timezone";
 
-function ContactCard({ name, lastMessageTime, lastMessage, unreadCount }) {
+function ContactCard({ name, lastMessageTime, lastMessage, unreadCount, active }) {
 
   const formatTimestamp = (timestamp) => {
       const date = moment.utc(timestamp).tz(moment.tz.guess())
@@ -8,7 +8,7 @@ function ContactCard({ name, lastMessageTime, lastMessage, unreadCount }) {
     }
 
   return (
-    <div className="flex items-center justify-between w-full px-4 h-18 border-b border-gray-300">
+    <div className={`flex items-center justify-between w-full px-4 h-18 border-b border-gray-300 ${active ? 'bg-gray-100' : ''}`}>
       <div className=" flex flex-col flex-grow max-w-3/4">
         <p>{name}</p>
         <p className="text-gray-500 truncate">{lastMessage || ''}</p>

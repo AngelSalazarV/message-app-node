@@ -7,6 +7,7 @@ function Sidebar({ onSelectedContact }) {
   const { contacts, messages, updateLastMessage } = useContext(GlobalContext);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const [active, setActive] = useState(false);
   const userId = localStorage.getItem("userId");
 
   const getChatId = (id1, id2) => {
@@ -63,7 +64,7 @@ function Sidebar({ onSelectedContact }) {
           const unreadCount = messages[chatId]?.filter((msg) => !msg.seen && msg.receiver_id === userId).length || 0;
 
           return (
-            <div key={chatId} onClick={() => onSelectedContact(contact)}
+            <div key={chatId} onClick={() => { onSelectedContact(contact); setActive(!active); }}
               className="cursor-pointer hover:bg-gray-100"
             >
               <ContactCard
@@ -71,6 +72,7 @@ function Sidebar({ onSelectedContact }) {
                 lastMessageTime={lastMessageTime}
                 lastMessage={lastMessageContent}
                 unreadCount={unreadCount}
+                active={active}
               />
             </div>
           );
