@@ -53,7 +53,7 @@ export function Login() {
     try{
       const user = await actions.login({email, password})
       setUserId(user.user.id)
-      localStorage.setItem('userId', user.id)
+      localStorage.setItem('userId', user.user.id)
       navigate('/')
     }catch(error){
       toast.error(error.message)
