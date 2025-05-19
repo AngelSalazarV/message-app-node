@@ -5,13 +5,15 @@ import moment from "moment-timezone";
 import { CheckCheck, ChevronDown } from "lucide-react"
 import AudioRecorder from "./AudioRecorder"
 import MessagesActionModal from "./MessagesActionModal"
+import { Context } from "../context/AppContext";
 
 const getChatId = (id1, id2) => {
   return [id1, id2].sort().join("-");
 }
 
 function ContainerMessageText({ receivedId }) {
-  const { messages, loadMessages, deleteMessageFromState } = useContext(GlobalContext);
+  const { messages, loadMessages, deleteMessageFromState, contacts } = useContext(GlobalContext);
+  const { actions } = useContext(Context);
   const [message, setMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -32,6 +34,11 @@ function ContainerMessageText({ receivedId }) {
 
   const sendMessage = async () => {
     if (message.trim() !== "") {
+      const exists = contacts.some(c => c.contact_id === receivedId);
+        if (!exists) {
+          await actions.addContact(userId, receivedId)
+        }
+
       const newMessage = {
         sender_id: userId,
         receiver_id: receivedId,
