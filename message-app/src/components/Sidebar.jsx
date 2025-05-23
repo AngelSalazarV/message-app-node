@@ -31,7 +31,7 @@ function Sidebar({ onSelectedContact }) {
 
     if (e.target.value.length > 2) {
       // Realizar búsqueda de usuarios
-      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/users?query=${e.target.value}&userId=${userId}`);
+      const res = await fetch(`http://localhost:3000/api/users?query=${e.target.value}&userId=${userId}`);
       const data = await res.json();
       setSearchResults(data);
     } else {
@@ -40,6 +40,12 @@ function Sidebar({ onSelectedContact }) {
   };
 
   const combinedContacts = search.length > 2 ? searchResults : contacts;
+
+  const sortedContacts = [...combinedContacts].sort((a, b) => {
+  const aTime = a.last_message?.created_at ? new Date(a.last_message.created_at).getTime() : 0;
+  const bTime = b.last_message?.created_at ? new Date(b.last_message.created_at).getTime() : 0;
+  return bTime - aTime;
+});
 
   return (
     <div className="w-100 flex flex-col h-screen border-r border-gray-200 pr-2">
@@ -56,7 +62,7 @@ function Sidebar({ onSelectedContact }) {
         </div>
       </div>
       <div>
-        {combinedContacts.map((contact) => {
+        {sortedContacts.map((contact) => {
           const chatId = getChatId(contact.contact_id, userId);
           const lastMessage = contact.last_message
           const lastMessageTime = lastMessage?.created_at;

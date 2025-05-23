@@ -78,7 +78,7 @@ function ContainerMessageText({ receivedId }) {
         !msg.seen
     );
     unseenMessages?.forEach((msg) => {
-      fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages/seen`, {
+      fetch(`http://localhost:3000/api/messages/seen`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messageId: msg.id }),
