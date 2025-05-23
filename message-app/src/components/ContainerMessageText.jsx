@@ -6,6 +6,7 @@ import { CheckCheck, ChevronDown } from "lucide-react"
 import AudioRecorder from "./AudioRecorder"
 import MessagesActionModal from "./MessagesActionModal"
 import { Context } from "../context/AppContext";
+import { getDeletedForMe, addDeletedForMe } from "../utils/deletedForMe";
 
 const getChatId = (id1, id2) => {
   return [id1, id2].sort().join("-");
@@ -22,6 +23,11 @@ function ContainerMessageText({ receivedId }) {
 
   const chatId = getChatId(receivedId, localStorage.getItem("userId"));
   const userId = localStorage.getItem("userId");
+
+  const deletedForMe = getDeletedForMe();
+  const filteredMessages = messages[chatId]?.filter(
+    (msg) => !deletedForMe.includes(msg.id)
+  ) || [];
 
 
   useEffect(() => {
@@ -109,7 +115,17 @@ function ContainerMessageText({ receivedId }) {
 
   // Eliminar mensaje
   const deleteMessages = () => {
-    socket.emit("deleteMessage", { id: selectedMessage })
+    const msg = messages[chatId]?.find(m => m.id === selectedMessage);
+    if (!msg) return;
+    if (msg.sender_id === userId) {
+      // Si es tuyo, eliminar de la BD
+      socket.emit("deleteMessage", { id: selectedMessage });
+    } else {
+      // Si es recibido, solo ocultar localmente
+      addDeletedForMe(selectedMessage);
+      // Opcional: actualiza el estado local para re-renderizar
+      // Si usas useState para mensajes, fuerza un update aquí si es necesario
+    }
     setIsModalOpen(false)
   };
 
@@ -118,8 +134,8 @@ function ContainerMessageText({ receivedId }) {
       <div className="w-full flex-1 px-50 bg-chat flex flex-col overflow-y-auto hide-scrollbar">
         <div className="flex-grow flex flex-col">
           <div className="flex flex-col py-5 justify-end flex-grow">
-            {messages[chatId]?.length > 0 ? (
-              messages[chatId].map((msg, index) => (
+            {filteredMessages.length > 0 ? (
+              filteredMessages.map((msg, index) => (
                 <div
                   key={index}
                   className={`w-full flex ${
