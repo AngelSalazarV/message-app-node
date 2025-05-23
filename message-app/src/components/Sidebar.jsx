@@ -68,13 +68,13 @@ function Sidebar({ onSelectedContact }) {
           const lastMessageTime = lastMessage?.created_at;
           const lastMessageContent = lastMessage?.type === "audio" ? "Audio" : lastMessage?.content;
           const unreadCount = messages[chatId]?.filter((msg) => !msg.seen && msg.receiver_id === userId).length || 0;
-
+        
           return (
             <div key={chatId} onClick={() => { onSelectedContact(contact); setActiveContactId(contact.contact_id); }}
               className="cursor-pointer hover:bg-gray-100"
             >
               <ContactCard
-                name={contact.username || contact.users?.username} // Cambia esto si tienes un campo de nombre
+                name={contact.username || contact.users?.username} 
                 lastMessageTime={lastMessageTime}
                 lastMessage={lastMessageContent}
                 unreadCount={unreadCount}

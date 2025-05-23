@@ -163,6 +163,22 @@ export const GlobalProvider = ({ children }) => {
       }
       return updatedMessages;
     });
+
+    // Actualizar el last_message del contacto correspondiente
+    setContacts((prev) => {
+      return prev.map((contact) => {
+        const thisChatId = [contact.contact_id, userId].sort().join("-");
+        if (thisChatId === chatId) {
+          // Buscar el nuevo último mensaje
+          const chatMessages = (messages[chatId] || []).filter((msg) => msg.id !== messageId);
+          const lastMsg = chatMessages.length > 0
+            ? chatMessages[chatMessages.length - 1]
+            : null;
+          return { ...contact, last_message: lastMsg };
+        }
+        return contact;
+      });
+    });
   }
 
   const addContacts = async (newContacts) => {
