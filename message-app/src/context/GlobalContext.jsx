@@ -1,52 +1,85 @@
 import { createContext, useState, useEffect } from "react";
 import { initDB, getContacts, saveContacts, getMessages, saveMessages, deleteMessage } from "../utils/indexedDB";
 import socket, { supabase } from "../client";
+import { Loader } from "../components/Loader";
+import { ForceLogoutModal } from "../components/ForceLogoutModal";
 
 export const GlobalContext = createContext();
 
 export const GlobalProvider = ({ children }) => {
   const [contacts, setContacts] = useState([]);
   const [messages, setMessages] = useState({});
-  const [loading, setLoading] = useState(true); 
-  const [ userId, setUserId ] = useState(localStorage.getItem("userId"));
+  const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [userId, setUserId] = useState(localStorage.getItem("userId"));
+  const [forceLogout, setForceLogout] = useState(false);
+
+  // Función de logout global
+  const logout = () => {
+    localStorage.clear();
+    indexedDB.deleteDatabase("MessageAppDB"); // Limpia IndexedDB si quieres
+    setUserId(null);
+    window.location.href = "/login";
+  };
+
+  // Helper para fetch seguro
+  const safeFetch = async (...args) => {
+    const res = await fetch(...args);
+    if ([401, 403, 404].includes(res.status)) {
+      setForceLogout(true);
+      throw new Error("Sesión inválida o recurso no encontrado");
+    }
+    return res;
+  };
 
   useEffect(() => {
+    setLoading(true);
+    setProgress(0);
     const initializeData = async () => {
+      setProgress(10)
       await initDB();
+      setProgress(20)
 
       if (!userId) {
         setContacts([]);
         setMessages({});
         setLoading(false);
+        setProgress(100);
         return;
       }
 
 
       // Intentar cargar contactos desde IndexedDB
-      const storedContacts = await getContacts();
+      const storedContacts = await getContacts(userId);
+      setProgress(40)
       if (storedContacts.length > 0) {
         setContacts(storedContacts);
       } else {
         try {
-          const response = await fetch(`http://localhost:3000/api/contacts?user_id=${userId}`);
+          const response = await safeFetch(`http://localhost:3000/api/contacts?user_id=${userId}`);
           const backendContacts = await response.json();
           console.log("Contacts fetched from backend:", backendContacts);
-          await saveContacts(backendContacts);
+          await saveContacts(backendContacts, userId);
           setContacts(backendContacts);
         } catch (error) {
           console.error("Error fetching contacts from backend:", error);
         }
       }
+      setProgress(60)
 
       // Sincronizar mensajes desde Supabase
       const { data: supabaseMessages, error: messagesError } = await supabase
         .from("messages")
         .select("id, sender_id, receiver_id, content, type, created_at, seen");
 
+      setProgress(80)
+
       if (messagesError) {
+        setForceLogout(true);
         console.error("Error fetching messages from Supabase:", messagesError.message);
+        return
       } else {
-        await saveMessages(supabaseMessages);
+        await saveMessages(supabaseMessages, userId);
 
         // Organizar mensajes por chat ID y ordenarlos por fecha
         const messagesByChat = supabaseMessages.reduce((acc, message) => {
@@ -60,7 +93,8 @@ export const GlobalProvider = ({ children }) => {
         setMessages(messagesByChat);
       }
 
-      setLoading(false)
+      setProgress(100);
+      setLoading(false);
     };
 
     initializeData();
@@ -116,7 +150,7 @@ export const GlobalProvider = ({ children }) => {
   const loadMessages = async (chatId, sender_id, receiver_id, limit = 20, offset = 0) => {
     // Espera ambos resultados antes de actualizar el estado
     const [storedMessages, backendResponse] = await Promise.all([
-      getMessages(sender_id, receiver_id, limit, offset),
+      getMessages(sender_id, receiver_id, userId, limit, offset),
       fetch(`http://localhost:3000/api/messages?sender_id=${sender_id}&receiver_id=${receiver_id}`)
     ]);
     const backendMessages = await backendResponse.json();
@@ -128,7 +162,7 @@ export const GlobalProvider = ({ children }) => {
     }, []);
 
     // Guarda en IndexedDB solo los nuevos mensajes
-    await saveMessages(allMessages);
+    await saveMessages(allMessages, userId);
 
     // Actualiza el estado global SOLO UNA VEZ
     setMessages((prev) => ({
@@ -193,7 +227,7 @@ export const GlobalProvider = ({ children }) => {
     }
 
     // Guardar los nuevos contactos en IndexedDB
-    await saveContacts(contactsToAdd)
+    await saveContacts(contactsToAdd, userId)
 
     // Actualizar el estado de contactos
     setContacts((prev) => [...prev, ...contactsToAdd])
@@ -209,14 +243,15 @@ export const GlobalProvider = ({ children }) => {
           : contact
       );
       // Actualiza también en IndexedDB
-      saveContacts(updatedContacts);
+      saveContacts(updatedContacts, userId);
       return updatedContacts;
     });
   }
 
   return (
-    <GlobalContext.Provider value={{ contacts, messages, loadMessages, addContacts, deleteMessageFromState, loading, updateLastMessage, userId, setUserId }}>
-      {children}
+    <GlobalContext.Provider value={{ contacts, messages, loadMessages, addContacts, deleteMessageFromState, loading, updateLastMessage, userId, setUserId, logout }}>
+      {forceLogout && <ForceLogoutModal onConfirm={logout} />}
+      {loading ? <Loader progress={progress} /> : children}
     </GlobalContext.Provider>
   );
 };

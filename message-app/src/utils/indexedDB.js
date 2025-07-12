@@ -26,19 +26,19 @@ export const initDB = () => {
   });
 };
 
-export const saveMessages = async (messages) => {
+export const saveMessages = async (messages, userId) => {
   const db = await initDB();
   const transaction = db.transaction("messages", "readwrite");
   const store = transaction.objectStore("messages");
 
   messages.forEach((message) => {
-    store.put(message);
+    store.put({ ...message, userId });
   });
 
   return transaction.complete;
 };
 
-export const getMessages = async (sender_id, receiver_id, limit = 20, offset = 0) => {
+export const getMessages = async (sender_id, receiver_id, userId, limit = 20, offset = 0) => {
   const db = await initDB();
   const transaction = db.transaction("messages", "readonly");
   const store = transaction.objectStore("messages");
@@ -49,8 +49,11 @@ export const getMessages = async (sender_id, receiver_id, limit = 20, offset = 0
     request.onsuccess = () => {
       const results = request.result.filter(
         (msg) =>
-          (msg.sender_id === sender_id && msg.receiver_id === receiver_id) ||
-          (msg.sender_id === receiver_id && msg.receiver_id === sender_id)
+          msg.userId === userId && // <-- filtra por userId
+          (
+            (msg.sender_id === sender_id && msg.receiver_id === receiver_id) ||
+            (msg.sender_id === receiver_id && msg.receiver_id === sender_id)
+          )
       );
       resolve(results.slice(offset, offset + limit));
     };
@@ -59,17 +62,17 @@ export const getMessages = async (sender_id, receiver_id, limit = 20, offset = 0
   });
 };
 
-export const saveContacts = async (contacts) => {
+export const saveContacts = async (contacts, userId) => {
   const db = await initDB();
   const transaction = db.transaction("contacts", "readwrite");
   const store = transaction.objectStore("contacts");
 
-  contacts.forEach((contact) => store.put(contact));
+  contacts.forEach((contact) => store.put({ ...contact, userId}));
 
   return transaction.complete;
 };
 
-export const getContacts = async () => {
+export const getContacts = async (userId) => {
   const db = await initDB();
   const transaction = db.transaction("contacts", "readonly");
   const store = transaction.objectStore("contacts");
@@ -78,7 +81,7 @@ export const getContacts = async () => {
     const request = store.getAll();
 
     request.onsuccess = () => {
-      resolve(request.result);
+      resolve(request.result.filter(c => c.userId === userId))
     };
 
     request.onerror = () => {

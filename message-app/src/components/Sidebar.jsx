@@ -2,12 +2,15 @@ import { useContext, useState, useEffect } from "react";
 import { GlobalContext } from "../context/GlobalContext";
 import socket from "../client";
 import ContactCard from "./ContactCard";
+import { LogOut } from "lucide-react";
+import { LogoutModal } from "./logoutModal";
 
 function Sidebar({ onSelectedContact }) {
   const { contacts, messages, updateLastMessage } = useContext(GlobalContext);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [activeContactId, setActiveContactId] = useState(null);
+  const [logoutModalActive, setLogoutModalActive] = useState(false);
   const userId = localStorage.getItem("userId");
 
   const getChatId = (id1, id2) => {
@@ -47,11 +50,29 @@ function Sidebar({ onSelectedContact }) {
   return bTime - aTime;
 });
 
+const handleOpenLogoutModal = () => {
+  setLogoutModalActive(true);
+}
+const handleCloseLogoutModal = () => {
+  setLogoutModalActive(false);
+}
+
+const handleLogout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('userId');
+  setLogoutModalActive(false);
+  window.location.reload();
+}
+
   return (
+    <>
     <div className="w-100 flex flex-col h-screen border-r border-gray-200 pr-2">
       <div className="w-full px-3 py-2 border-b border-gray-200">
         <div className="flex flex-col gap-y-4 mb-5">
-          <h1 className="font-semibold text-2xl">Chats</h1>
+          <div className="flex justify-between items-center">
+            <h1 className="font-semibold text-2xl">Chats</h1>
+            <LogOut onClick={handleOpenLogoutModal} className="cursor-pointer bg-red-200 rounded-2xl p-1" color="red" />
+          </div>
           <input
             type="text"
             placeholder="Buscar..."
@@ -86,6 +107,8 @@ function Sidebar({ onSelectedContact }) {
         
       </div>
     </div>
+    <LogoutModal active={logoutModalActive} onClose={handleCloseLogoutModal} onLogout={handleLogout} />
+    </>
   );
 }
 
