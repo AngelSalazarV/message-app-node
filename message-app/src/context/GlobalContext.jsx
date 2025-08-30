@@ -56,7 +56,7 @@ export const GlobalProvider = ({ children }) => {
         setContacts(storedContacts);
       } else {
         try {
-          const response = await safeFetch(`http://localhost:3000/api/contacts?user_id=${userId}`);
+          const response = await safeFetch(`${import.meta.env.VITE_SERVER_URL}/api/contacts?user_id=${userId}`);
           const backendContacts = await response.json();
           console.log("Contacts fetched from backend:", backendContacts);
           await saveContacts(backendContacts, userId);
@@ -151,7 +151,7 @@ export const GlobalProvider = ({ children }) => {
     // Espera ambos resultados antes de actualizar el estado
     const [storedMessages, backendResponse] = await Promise.all([
       getMessages(sender_id, receiver_id, userId, limit, offset),
-      fetch(`http://localhost:3000/api/messages?sender_id=${sender_id}&receiver_id=${receiver_id}`)
+      fetch(`${import.meta.env.VITE_SERVER_URL}/api/messages?sender_id=${sender_id}&receiver_id=${receiver_id}`)
     ]);
     const backendMessages = await backendResponse.json();
 

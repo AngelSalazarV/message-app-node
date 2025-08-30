@@ -34,7 +34,7 @@ function Sidebar({ onSelectedContact }) {
 
     if (e.target.value.length > 2) {
       // Realizar búsqueda de usuarios
-      const res = await fetch(`http://localhost:3000/api/users?query=${e.target.value}&userId=${userId}`);
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/users?query=${e.target.value}&userId=${userId}`);
       const data = await res.json();
       setSearchResults(data);
     } else {

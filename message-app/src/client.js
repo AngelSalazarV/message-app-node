@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 import { createClient } from "@supabase/supabase-js";
 
 // Configuración de Socket.IO
-const socket = io('http://localhost:3000');
+const socket = io(import.meta.env.VITE_SERVER_URL);
 
 // Configuración de Supabase
 const supabaseUrl = "https://kiinqpxnutbuauziwbbu.supabase.co";
