@@ -3,7 +3,7 @@ import { GlobalContext } from "../context/GlobalContext";
 import socket from "../client";
 import ContactCard from "./ContactCard";
 import { LogOut } from "lucide-react";
-import { LogoutModal } from "./logoutModal"
+import LogoutModal from "./LogoutModalNew";
 
 function Sidebar({ onSelectedContact }) {
   const { contacts, messages, updateLastMessage } = useContext(GlobalContext);

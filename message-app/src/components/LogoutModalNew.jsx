@@ -1,4 +1,4 @@
-export const LogoutModal = ({ active, onClose, onLogout }) => {
+function LogoutModal({ active, onClose, onLogout }) {
 
   if (!active) return null;
     
@@ -17,3 +17,5 @@ export const LogoutModal = ({ active, onClose, onLogout }) => {
   );
   
 }
+
+export default LogoutModal;
